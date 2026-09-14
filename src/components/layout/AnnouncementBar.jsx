@@ -1,10 +1,12 @@
 import styles from './AnnouncementBar.module.css';
 
+// Only claims the store can actually keep — no invented promotions.
 const messages = [
-  'Frete grátis acima de R$ 199',
-  'Compre 3, leve 4 em toda linha Whey',
-  'Novos sabores de creatina — confira',
-  'Vitamina D3 com 40% off esta semana',
+  'Frete grátis acima de R$ 199',
+  'Envio em até 24h úteis',
+  'Pague com Pix, boleto ou cartão',
+  'Entrega para todo o Brasil',
+  'Produtos lacrados e com procedência',
 ];
 
 export default function AnnouncementBar() {

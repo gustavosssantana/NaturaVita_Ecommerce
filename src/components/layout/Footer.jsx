@@ -125,12 +125,12 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href={`${store.url.replace(/\/$/, '')}/pedido/consultar/`}
+                  href={`${store.url.replace(/\/$/, '')}/carrinho/`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={styles.colLink}
                 >
-                  Acompanhar pedido <ExternalLink size={11} />
+                  Meu carrinho na loja <ExternalLink size={11} />
                 </a>
               </li>
             </ul>

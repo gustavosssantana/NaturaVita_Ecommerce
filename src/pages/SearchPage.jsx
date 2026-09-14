@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import AnnouncementBar from '../components/layout/AnnouncementBar';
 import ProductCard from '../components/ui/ProductCard';
 import CartToast from '../components/ui/CartToast';
 import Link from '../components/ui/Link';
@@ -23,6 +24,7 @@ export default function SearchPage({ query }) {
 
   return (
     <>
+      <AnnouncementBar />
       <Header />
       <main className={styles.main}>
         <div className="container">
