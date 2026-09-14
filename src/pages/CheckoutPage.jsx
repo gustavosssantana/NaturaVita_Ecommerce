@@ -1,15 +1,14 @@
 import { useState } from 'react';
-import { Truck, ShieldCheck, Lock, ExternalLink, Search, Check } from 'lucide-react';
+import { Truck, ShieldCheck, ExternalLink, Search, Check } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import Link from '../components/ui/Link';
 import { useCatalog } from '../data/CatalogContext';
 import { useCartItems } from '../context/CartContext';
-import { money, installment, cartCheckoutUrl, deliveryEstimate } from '../lib/format';
+import { money, buyUrl, deliveryEstimate } from '../lib/format';
 import styles from './CheckoutPage.module.css';
 
 const FRETE_THRESHOLD = 199;
-const FRETE_COST = 19.9;
 const STEPS = ['carrinho', 'entrega', 'pagamento'];
 
 function onlyDigits(v) {
@@ -29,11 +28,9 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState(null);
   const [cepError, setCepError] = useState('');
   const [lookingUp, setLookingUp] = useState(false);
+  const [opened, setOpened] = useState(() => new Set());
 
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
-  const frete = subtotal >= FRETE_THRESHOLD ? 0 : FRETE_COST;
-  const total = subtotal + frete;
-  const checkoutUrl = cartCheckoutUrl(store?.url, items);
   const prazo = deliveryEstimate(address?.uf);
 
   async function lookupCep(e) {
@@ -68,6 +65,10 @@ export default function CheckoutPage() {
     } finally {
       setLookingUp(false);
     }
+  }
+
+  function markOpened(id) {
+    setOpened((prev) => new Set(prev).add(id));
   }
 
   if (items.length === 0) {
@@ -121,7 +122,7 @@ export default function CheckoutPage() {
         <section className={styles.content}>
           <div className="container">
             <h1 className={styles.title}>
-              entrega e <em className={styles.titleItalic}>pagamento.</em>
+              finalizar <em className={styles.titleItalic}>compra.</em>
             </h1>
 
             <div className={styles.grid}>
@@ -129,10 +130,10 @@ export default function CheckoutPage() {
                 {/* ── CEP ── */}
                 <div className={styles.card}>
                   <h2 className={styles.cardTitle}>
-                    <Truck size={15} /> Onde você quer receber?
+                    <Truck size={15} /> Conferir prazo de entrega
                   </h2>
                   <p className={styles.cardDesc}>
-                    Informe seu CEP para conferir a região e o prazo estimado de entrega.
+                    Informe seu CEP para ver a região e o prazo estimado.
                   </p>
 
                   <form className={styles.cepForm} onSubmit={lookupCep}>
@@ -152,7 +153,7 @@ export default function CheckoutPage() {
                         'buscando…'
                       ) : (
                         <>
-                          <Search size={14} /> buscar
+                          <Search size={15} /> buscar
                         </>
                       )}
                     </button>
@@ -169,65 +170,91 @@ export default function CheckoutPage() {
                       <p className={styles.addressCity}>
                         {address.city} — {address.uf} · CEP {address.cep}
                       </p>
-                      <div className={styles.shippingRow}>
-                        <span className={styles.shippingLabel}>
-                          {frete === 0 ? 'Frete grátis' : `Frete estimado ${money(frete)}`}
-                        </span>
-                        {prazo && <span className={styles.shippingTime}>chega em {prazo}</span>}
-                      </div>
+                      {prazo && (
+                        <div className={styles.shippingRow}>
+                          <span className={styles.shippingLabel}>Prazo estimado</span>
+                          <span className={styles.shippingTime}>{prazo}</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
                   <p className={styles.cepNote}>
-                    O endereço completo e o valor final do frete são confirmados na etapa de
-                    pagamento, junto com as opções de envio disponíveis para o seu CEP.
+                    O valor exato do frete é calculado na página de cada produto, junto com as
+                    opções de envio para o seu CEP.
                   </p>
                 </div>
 
-                {/* ── Itens ── */}
+                {/* ── Itens com botão de compra ── */}
                 <div className={styles.card}>
-                  <h2 className={styles.cardTitle}>Itens do pedido</h2>
+                  <h2 className={styles.cardTitle}>Seus itens</h2>
+                  <p className={styles.cardDesc}>
+                    Clique em comprar para abrir o item na loja oficial e finalizar o pagamento com
+                    Pix, boleto ou cartão.
+                  </p>
+
                   <div className={styles.itemList}>
-                    {items.map((item) => (
-                      <div key={`${item.id}-${item.variantId}`} className={styles.item}>
-                        <span className={styles.itemThumb}>
-                          {item.product.image ? (
-                            <img src={item.product.image} alt="" />
+                    {items.map((item) => {
+                      const url = buyUrl(store?.url, item.product);
+                      const done = opened.has(item.id);
+                      return (
+                        <div key={`${item.id}-${item.variantId}`} className={styles.item}>
+                          <span className={styles.itemThumb}>
+                            {item.product.image ? (
+                              <img src={item.product.image} alt="" />
+                            ) : (
+                              <span className={styles.noThumb} />
+                            )}
+                            <span className={styles.itemQty}>{item.qty}</span>
+                          </span>
+
+                          <div className={styles.itemInfo}>
+                            <p className={styles.itemName}>{item.product.name}</p>
+                            <span className={styles.itemPrice}>{money(item.subtotal)}</span>
+                          </div>
+
+                          {url ? (
+                            <a
+                              className={`${styles.itemBuy} ${done ? styles.itemBuyDone : ''}`}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => markOpened(item.id)}
+                            >
+                              {done ? (
+                                <>
+                                  <Check size={14} /> aberto
+                                </>
+                              ) : (
+                                <>
+                                  comprar <ExternalLink size={13} />
+                                </>
+                              )}
+                            </a>
                           ) : (
-                            <span className={styles.noThumb} />
-                          )}
-                          <span className={styles.itemQty}>{item.qty}</span>
-                        </span>
-                        <div className={styles.itemInfo}>
-                          <p className={styles.itemName}>{item.product.name}</p>
-                          {item.variant && item.variant.label !== 'Único' && (
-                            <p className={styles.itemVariant}>{item.variant.label}</p>
+                            <span className={styles.itemUnavailable}>indisponível</span>
                           )}
                         </div>
-                        <span className={styles.itemPrice}>{money(item.subtotal)}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
+
                   <Link href="/carrinho" className={styles.editCart}>
                     editar carrinho
                   </Link>
                 </div>
               </div>
 
-              {/* ── Resumo / finalização ── */}
+              {/* ── Resumo ── */}
               <aside className={styles.summary}>
                 <h2 className={styles.summaryTitle}>resumo</h2>
 
                 <div className={styles.summaryLines}>
                   <div className={styles.summaryLine}>
-                    <span>subtotal</span>
-                    <span>{money(subtotal)}</span>
-                  </div>
-                  <div className={styles.summaryLine}>
-                    <span>frete estimado</span>
-                    <span className={frete === 0 ? styles.freteFree : ''}>
-                      {frete === 0 ? 'grátis' : money(frete)}
+                    <span>
+                      {items.length} {items.length === 1 ? 'item' : 'itens'}
                     </span>
+                    <span>{money(subtotal)}</span>
                   </div>
                 </div>
 
@@ -235,31 +262,30 @@ export default function CheckoutPage() {
 
                 <div className={styles.totalRow}>
                   <span className={styles.totalLabel}>total</span>
-                  <span className={styles.totalValue}>{money(total)}</span>
+                  <span className={styles.totalValue}>{money(subtotal)}</span>
                 </div>
-                <p className={styles.installments}>ou {installment(total)} sem juros</p>
-
-                {checkoutUrl ? (
-                  <a
-                    className={styles.payBtn}
-                    href={checkoutUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Lock size={15} /> ir para o pagamento
-                  </a>
-                ) : (
-                  <p className={styles.payUnavailable}>
-                    Não foi possível abrir o pagamento agora. Recarregue a página e tente de novo.
-                  </p>
-                )}
+                <p className={styles.installments}>
+                  {subtotal >= FRETE_THRESHOLD
+                    ? 'acima de R$199 — confira o frete grátis na loja'
+                    : 'frete calculado na loja pelo seu CEP'}
+                </p>
 
                 <p className={styles.secureNote}>
                   <ShieldCheck size={13} />
-                  Você finaliza no checkout oficial da loja, com Pix, boleto ou cartão. Seus dados
-                  de pagamento são processados lá, com certificado de segurança.
-                  <ExternalLink size={11} />
+                  O pagamento acontece na loja oficial Natura Vita, com certificado de segurança.
+                  Seus dados de cartão nunca passam por este site.
                 </p>
+
+                {store?.url && (
+                  <a
+                    className={styles.storeLink}
+                    href={store.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    abrir a loja oficial <ExternalLink size={12} />
+                  </a>
+                )}
               </aside>
             </div>
           </div>

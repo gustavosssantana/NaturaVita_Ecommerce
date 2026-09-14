@@ -701,9 +701,28 @@
   .productGrid { grid-template-columns: 1fr; gap: 28px; }
   .gallery { position: static; grid-template-columns: 44px 1fr; gap: 10px; }
   .thumb { width: 44px; height: 44px; }
-  .relatedGrid { grid-template-columns: repeat(2, 1fr); }
   .descGrid { grid-template-columns: 1fr; }
   .benefits { grid-template-columns: 1fr 1fr; }
+
+  /* Related products swipe sideways instead of stacking */
+  .relatedGrid {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 62%;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    margin-inline: calc(var(--container-pad) * -1);
+    padding-inline: var(--container-pad);
+    padding-bottom: 4px;
+  }
+
+  .relatedGrid::-webkit-scrollbar { display: none; }
+  .relatedGrid > * { scroll-snap-align: start; }
 }
 
 @media (max-width: 480px) {
@@ -711,11 +730,17 @@
   .thumbStrip { flex-direction: row; order: 2; overflow-x: auto; scrollbar-width: none; gap: 8px; }
   .thumbStrip::-webkit-scrollbar { display: none; }
   .mainImage { order: 1; }
-  .thumb { width: 52px; height: 52px; flex-shrink: 0; }
-  .relatedGrid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .purchaseRow { flex-direction: column; }
-  .qtyControl { width: 100%; justify-content: center; }
-  .addToCartBtn { width: 100%; text-align: center; }
+  .thumb { width: 56px; height: 56px; flex-shrink: 0; }
+  .relatedGrid { grid-auto-columns: 70%; gap: 10px; }
   .productSection { padding: 20px 0 40px; }
-  .tabBody { padding: 24px 0 36px; }
+
+  /* Bigger, full-width purchase controls */
+  .purchaseRow { flex-direction: column; gap: 10px; }
+  .qtyControl { width: 100%; justify-content: center; height: 52px; }
+  .qtyBtn { width: 64px; }
+  .qtyValue { min-width: 48px; font-size: 1.05rem; }
+  .addToCartBtn { width: 100%; height: 54px; font-size: 0.95rem; }
+  .buyNowBtn { height: 54px; font-size: 0.95rem; }
+  .favBtn { min-height: var(--tap); justify-content: center; width: 100%; }
+  .optionPill { min-height: var(--tap); display: inline-flex; align-items: center; font-size: 0.88rem; }
 }

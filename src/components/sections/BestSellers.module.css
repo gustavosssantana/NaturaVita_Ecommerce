@@ -117,17 +117,50 @@
 @media (max-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); } }
 
 @media (max-width: 760px) {
-  .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .header { align-items: flex-start; }
+
+  /* Swipeable row instead of a long vertical stack */
+  .grid {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 62%;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    margin-inline: calc(var(--container-pad) * -1);
+    padding-inline: var(--container-pad);
+    padding-bottom: 4px;
+  }
+
+  .grid::-webkit-scrollbar { display: none; }
+  .grid > * { scroll-snap-align: start; }
 }
 
 @media (max-width: 480px) {
-  .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .filterTabs { background: transparent; padding: 0; gap: 7px; }
+  .grid { grid-auto-columns: 70%; gap: 10px; }
+
+  .filterTabs {
+    background: transparent;
+    padding: 0;
+    gap: 7px;
+    margin-inline: calc(var(--container-pad) * -1);
+    padding-inline: var(--container-pad);
+  }
+
   .filterTab {
     border: 1px solid var(--color-border);
     background: var(--color-white);
+    min-height: var(--tap);
+    padding: 0 18px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.85rem;
   }
+
   .filterTab.active {
     background: var(--color-green-deep);
     color: var(--color-white);

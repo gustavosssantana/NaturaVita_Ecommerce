@@ -72,7 +72,7 @@ export default function ProductPage({ productId }) {
   const off = discountPercent(product.price, product.originalPrice);
   const favorited = isFavorite(product.id);
   const images = product.images?.length ? product.images : product.image ? [product.image] : [];
-  const checkoutUrl = buyUrl(store?.url, product, variant?.id, qty);
+  const checkoutUrl = buyUrl(store?.url, product);
   const hasVariants = (product.variants?.length || 0) > 1;
 
   function handleAdd() {
@@ -233,7 +233,7 @@ export default function ProductPage({ productId }) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    comprar agora <ExternalLink size={14} />
+                    comprar este item <ExternalLink size={14} />
                   </a>
                 )}
 

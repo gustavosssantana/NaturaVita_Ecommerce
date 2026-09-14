@@ -225,9 +225,17 @@
 }
 
 /* ── Items ── */
-.itemList { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+.itemList { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
 
-.item { display: flex; align-items: center; gap: 12px; }
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.item:last-child { border-bottom: none; padding-bottom: 0; }
 
 .itemThumb {
   position: relative;
@@ -292,11 +300,61 @@
 .itemVariant { font-size: 0.75rem; color: var(--color-text-muted); }
 
 .itemPrice {
+  display: inline-block;
   font-size: 0.88rem;
   font-weight: var(--fw-bold);
   color: var(--color-green-deep);
-  flex-shrink: 0;
+  margin-top: 2px;
 }
+
+/* ── Per-item buy button ── */
+.itemBuy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: var(--radius-full);
+  background: var(--color-orange);
+  color: var(--color-white);
+  font-size: 0.85rem;
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  transition: background 0.16s, transform 0.12s, box-shadow 0.18s;
+}
+
+.itemBuy:hover {
+  background: var(--color-orange-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(200, 83, 26, 0.3);
+}
+
+.itemBuyDone {
+  background: var(--color-green-accent);
+}
+
+.itemBuyDone:hover { background: var(--color-green-mid); }
+
+.itemUnavailable {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.storeLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  font-size: 0.82rem;
+  font-weight: var(--fw-semibold);
+  color: var(--color-green-accent);
+  transition: color 0.15s;
+}
+
+.storeLink:hover { color: var(--color-green-deep); }
 
 .editCart {
   display: inline-block;
@@ -467,8 +525,12 @@
   .card { padding: 20px 16px; }
   .summary { padding: 20px 16px; }
   .cepForm { flex-direction: column; }
-  .cepInput { max-width: none; }
-  .cepBtn { justify-content: center; }
+  .cepInput { max-width: none; height: 52px; font-size: 1rem; }
+  .cepBtn { justify-content: center; height: 52px; font-size: 0.95rem; }
   .stepLabel { font-size: 0.66rem; }
   .totalValue { font-size: 1.4rem; }
+
+  /* Buy button drops to its own full-width row so it stays easy to tap */
+  .item { flex-wrap: wrap; }
+  .itemBuy { width: 100%; min-height: 48px; font-size: 0.9rem; }
 }

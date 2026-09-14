@@ -485,9 +485,15 @@
 }
 
 @media (max-width: 600px) {
-  .inner { gap: 10px; height: 60px; }
+  .inner { gap: 8px; height: 60px; }
   .logoText { font-size: 1rem; }
-  .cartPill { height: 34px; }
   .searchWrap { display: none; }
   .mobilePanel { height: calc(100vh - 60px); }
+
+  /* Bigger tap targets in the top bar */
+  .iconBtn,
+  .mobileToggle { width: 42px; height: 42px; }
+  .cartPill { height: 42px; padding: 0 14px; }
+  .mobileItem { min-height: 52px; }
+  .mobileSecondary { min-height: var(--tap); }
 }

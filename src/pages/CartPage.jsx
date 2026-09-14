@@ -11,7 +11,6 @@ import { navigate } from '../lib/router';
 import styles from './CartPage.module.css';
 
 const FRETE_THRESHOLD = 199;
-const FRETE_COST = 19.9;
 
 const STEPS = ['carrinho', 'entrega', 'pagamento'];
 
@@ -21,9 +20,7 @@ export default function CartPage() {
   const items = useCartItems(products);
 
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
-  const frete = subtotal === 0 ? 0 : subtotal >= FRETE_THRESHOLD ? 0 : FRETE_COST;
   const freteLeft = Math.max(0, FRETE_THRESHOLD - subtotal);
-  const total = subtotal + frete;
 
   const cartIds = items.map((i) => i.id);
   const suggestions = products.filter((p) => !cartIds.includes(p.id) && p.image).slice(0, 4);
@@ -151,31 +148,27 @@ export default function CartPage() {
 
                   <div className={styles.summaryLines}>
                     <div className={styles.summaryLine}>
-                      <span>subtotal</span>
+                      <span>
+                        {items.length} {items.length === 1 ? 'produto' : 'produtos'}
+                      </span>
                       <span>{money(subtotal)}</span>
                     </div>
-                    <div className={styles.summaryLine}>
-                      <span>frete estimado</span>
-                      <span className={frete === 0 ? styles.freteFree : ''}>
-                        {frete === 0 ? 'grátis' : money(frete)}
-                      </span>
-                    </div>
                   </div>
-
-                  <p className={styles.freteNote}>
-                    O valor exato do frete é calculado pelo seu CEP na próxima etapa.
-                  </p>
 
                   <div className={styles.summaryDivider} />
 
                   <div className={styles.totalRow}>
-                    <span className={styles.totalLabel}>total</span>
-                    <span className={styles.totalValue}>{money(total)}</span>
+                    <span className={styles.totalLabel}>subtotal</span>
+                    <span className={styles.totalValue}>{money(subtotal)}</span>
                   </div>
-                  <p className={styles.installments}>ou {installment(total)} sem juros</p>
+                  <p className={styles.installments}>ou {installment(subtotal)} sem juros</p>
+
+                  <p className={styles.freteNote}>
+                    O frete é calculado pelo seu CEP na loja oficial, na hora de fechar o pedido.
+                  </p>
 
                   <button className={styles.ctaBtn} onClick={() => navigate('/checkout')}>
-                    continuar para entrega →
+                    finalizar compra →
                   </button>
 
                   <Link href="/loja" className={styles.keepShopping}>
@@ -184,7 +177,7 @@ export default function CartPage() {
 
                   <div className={styles.summaryBenefits}>
                     <span>
-                      <ShieldCheck size={12} /> pagamento seguro
+                      <ShieldCheck size={12} /> pagamento seguro na loja oficial
                     </span>
                     <span>
                       <Clock size={12} /> envio em 24h úteis

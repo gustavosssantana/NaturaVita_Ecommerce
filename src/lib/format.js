@@ -21,27 +21,15 @@ export function discountPercent(price, originalPrice) {
   return Math.round((1 - price / originalPrice) * 100);
 }
 
-// Builds the Nuvemshop direct-buy link for a product/variant, which drops the
-// shopper straight into the store's real checkout (Pix, card, boleto).
-export function buyUrl(storeUrl, product, variantId = null, qty = 1) {
-  const vId = variantId || product?.variantId;
-  if (storeUrl && vId) {
-    return `${storeUrl.replace(/\/$/, '')}/comprar/?add_to_cart=${vId}&quantity=${qty}`;
-  }
-  return product?.canonicalUrl || storeUrl || null;
-}
-
-// Cart → Nuvemshop checkout. The store adds one variant per `add_to_cart`
-// parameter, so multi-item carts repeat it.
-export function cartCheckoutUrl(storeUrl, items) {
-  if (!storeUrl || !items?.length) return null;
-  const base = storeUrl.replace(/\/$/, '');
-  const params = items
-    .filter((i) => i.variant?.id || i.product?.variantId)
-    .map((i) => `add_to_cart=${i.variant?.id || i.product.variantId}&quantity=${i.qty}`)
-    .join('&');
-  if (!params) return base;
-  return `${base}/comprar/?${params}`;
+// Link that takes the shopper straight to this item's page in the Nuvemshop
+// store, where the real purchase happens (price, shipping by CEP, payment).
+//
+// The `?add_to_cart=` URL format is NOT used: this store answers it with an
+// empty cart, which loses the purchase.
+export function buyUrl(storeUrl, product) {
+  if (product?.canonicalUrl) return product.canonicalUrl;
+  if (storeUrl) return storeUrl;
+  return null;
 }
 
 // Rough delivery estimate by region, used only as an indication — the real

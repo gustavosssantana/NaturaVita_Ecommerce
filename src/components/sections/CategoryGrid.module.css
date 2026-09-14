@@ -128,13 +128,34 @@
   .grid { grid-template-columns: repeat(4, 1fr); }
 }
 
+/* On phones the 12 categories become a swipeable row that bleeds to both
+   screen edges — the half-visible next card shows there's more sideways. */
 @media (max-width: 680px) {
-  .grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .cardLabel { font-size: 0.72rem; }
-  .cardCount { font-size: 0.62rem; }
-  .cardMeta { padding: 8px 8px 10px; }
+  .grid {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 38%;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    margin-inline: calc(var(--container-pad) * -1);
+    padding-inline: var(--container-pad);
+    padding-bottom: 4px;
+  }
+
+  .grid::-webkit-scrollbar { display: none; }
+  .grid > * { scroll-snap-align: start; }
+
+  .skeleton { aspect-ratio: 0.82; }
+  .cardLabel { font-size: 0.78rem; }
+  .cardCount { font-size: 0.66rem; }
+  .cardMeta { padding: 9px 10px 11px; }
 }
 
 @media (max-width: 420px) {
-  .grid { grid-template-columns: repeat(2, 1fr); }
+  .grid { grid-auto-columns: 44%; }
 }

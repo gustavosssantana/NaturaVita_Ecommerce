@@ -90,11 +90,18 @@
 }
 
 @media (max-width: 760px) {
-  .track { grid-auto-columns: calc((100% - 12px) / 2); gap: 12px; }
   .navButtons { display: none; }
   .header { align-items: flex-start; }
+
+  /* Bleed to the screen edges so the next card peeks in */
+  .track {
+    grid-auto-columns: 62%;
+    gap: 12px;
+    margin-inline: calc(var(--container-pad) * -1);
+    padding-inline: var(--container-pad);
+  }
 }
 
 @media (max-width: 420px) {
-  .track { grid-auto-columns: 72%; gap: 10px; }
+  .track { grid-auto-columns: 70%; gap: 10px; }
 }

@@ -186,10 +186,17 @@
 }
 
 /* ── Responsive ── */
+@media (max-width: 760px) {
+  /* Comfortable tap targets on touch screens */
+  .addBtn { min-height: var(--tap); font-size: 0.85rem; }
+  .heartBtn { width: 38px; height: 38px; top: 7px; right: 7px; }
+  .heartBtn svg { width: 17px; height: 17px; }
+}
+
 @media (max-width: 480px) {
-  .meta { padding: 10px 11px 12px; gap: 4px; }
-  .name { font-size: 0.8rem; min-height: 2.2em; }
-  .price { font-size: 0.98rem; }
-  .addBtn { font-size: 0.75rem; padding: 8px 0; margin-top: 8px; }
-  .image { padding: 6px; }
+  .meta { padding: 11px 12px 13px; gap: 4px; }
+  .name { font-size: 0.85rem; min-height: 2.2em; }
+  .price { font-size: 1.05rem; }
+  .addBtn { margin-top: 9px; }
+  .image { padding: 8px; }
 }

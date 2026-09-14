@@ -465,11 +465,27 @@
 }
 
 @media (max-width: 600px) {
-  .filtersBar { top: 60px; }
+  .filtersBar { top: 60px; padding: 10px 0; }
   .filterRow { gap: 8px; }
-  .filterPills { flex: 1; min-width: 0; }
-  .sortBtn { padding: 6px 11px; }
-  .sortBtn span { display: none; }
+
+  .filterPills {
+    flex: 1;
+    min-width: 0;
+    margin-inline: calc(var(--container-pad) * -1);
+    padding-inline: var(--container-pad);
+  }
+
+  /* Bigger tap targets for filters and sorting */
+  .filterPill,
+  .sortBtn {
+    min-height: 40px;
+    padding: 0 15px;
+    font-size: 0.85rem;
+  }
+
+  .clearBtn { min-height: 40px; padding: 0 6px; }
+  .loadMoreBtn { width: 100%; min-height: 52px; }
+  .dropdownItem { min-height: var(--tap); display: flex; align-items: center; }
 }
 
 @media (max-width: 480px) {
