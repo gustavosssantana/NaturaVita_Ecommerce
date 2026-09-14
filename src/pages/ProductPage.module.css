@@ -53,16 +53,17 @@
 .thumb {
   width: 52px;
   height: 52px;
+  padding: 3px;
   border-radius: var(--radius-sm);
   border: 1.5px solid var(--color-border);
+  background: var(--color-white);
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
   flex-shrink: 0;
-  text-transform: none;
-  font-size: 0.6rem;
-  color: rgba(43,59,39,0.3);
-  letter-spacing: 0;
+  overflow: hidden;
 }
+
+.thumb img { width: 100%; height: 100%; object-fit: contain; }
 
 .thumb:hover { border-color: var(--color-green-mid); }
 
@@ -72,13 +73,43 @@
 }
 
 .mainImage {
+  position: relative;
   width: 100%;
   aspect-ratio: 1;
   border-radius: var(--radius-xl);
-  text-transform: none;
-  font-size: 0.68rem;
-  color: rgba(43,59,39,0.3);
-  letter-spacing: 0.05em;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mainImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 22px;
+}
+
+.noImage {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.imageBadge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: var(--color-orange);
+  color: var(--color-white);
+  font-size: 0.75rem;
+  font-weight: var(--fw-bold);
+  padding: 5px 11px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.02em;
 }
 
 /* ── Product Info ── */
@@ -515,6 +546,150 @@
 }
 
 .relatedAddBtn:hover { background: var(--color-green-mid); }
+
+/* ── Product meta extras ── */
+.productTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: var(--fw-semibold);
+  color: var(--color-green-accent);
+  margin-bottom: 8px;
+  transition: color 0.15s;
+}
+
+.productTag:hover { color: var(--color-green-deep); }
+
+.sku {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  background: rgba(43, 59, 39, 0.05);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  margin-left: 4px;
+}
+
+.stockRow { margin-bottom: 14px; }
+
+.inStock {
+  font-size: 0.8rem;
+  font-weight: var(--fw-semibold);
+  color: var(--color-green-accent);
+}
+
+.outStock {
+  font-size: 0.8rem;
+  font-weight: var(--fw-semibold);
+  color: var(--color-orange);
+}
+
+.addToCartDone { background: var(--color-green-deep) !important; }
+
+.addToCartBtn:disabled {
+  background: rgba(43, 59, 39, 0.12);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.buyNowBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--color-orange);
+  color: var(--color-white);
+  font-size: 0.88rem;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.01em;
+  transition: background 0.15s, transform 0.12s, box-shadow 0.18s;
+  margin-bottom: 12px;
+}
+
+.buyNowBtn:hover {
+  background: var(--color-orange-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(200, 83, 26, 0.3);
+}
+
+.favBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+  padding: 4px 0;
+  margin-bottom: 18px;
+  transition: color 0.15s;
+}
+
+.favBtn:hover { color: #d94f6a; }
+.favBtnActive { color: #d94f6a; }
+.favBtnActive svg { fill: #d94f6a; }
+
+/* ── Description ── */
+.descTitle {
+  font-size: 0.72rem;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: 32px 0 14px;
+}
+
+.descBody {
+  max-width: 760px;
+  padding-bottom: 40px;
+}
+
+.descBody p {
+  font-size: 0.92rem;
+  line-height: 1.8;
+  color: var(--color-text-mid);
+  white-space: pre-line;
+}
+
+/* ── Loading / not found states ── */
+.stateWrap {
+  min-height: 55vh;
+  display: flex;
+  align-items: center;
+  text-align: center;
+  background: var(--color-cream);
+  padding: 60px 0;
+}
+
+.stateTitle {
+  font-size: 1.6rem;
+  font-weight: var(--fw-bold);
+  color: var(--color-green-deep);
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.stateText {
+  font-size: 0.92rem;
+  color: var(--color-text-muted);
+}
+
+.stateBtn {
+  display: inline-flex;
+  margin-top: 20px;
+  padding: 13px 28px;
+  border-radius: var(--radius-full);
+  background: var(--color-green-deep);
+  color: var(--color-white);
+  font-size: 0.875rem;
+  font-weight: var(--fw-semibold);
+  transition: background 0.15s;
+}
+
+.stateBtn:hover { background: var(--color-green-mid); }
 
 /* ── Responsive ── */
 @media (max-width: 1024px) {

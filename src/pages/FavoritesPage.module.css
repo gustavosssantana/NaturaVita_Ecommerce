@@ -127,7 +127,20 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 16px;
+}
+
+@keyframes shimmer {
+  0%   { opacity: 0.55; }
+  50%  { opacity: 0.9; }
+  100% { opacity: 0.55; }
+}
+
+.skeleton {
+  aspect-ratio: 0.72;
+  border-radius: var(--radius-lg);
+  background: rgba(43, 59, 39, 0.07);
+  animation: shimmer 1.4s ease-in-out infinite;
 }
 
 /* ── Continue Shopping ── */

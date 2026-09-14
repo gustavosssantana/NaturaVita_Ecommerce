@@ -109,19 +109,61 @@
 
 /* ── Empty ── */
 .empty {
-  padding: 60px 0;
+  padding: 56px 24px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 14px;
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
-.emptyLink {
-  font-size: 0.85rem;
-  font-weight: var(--fw-semibold);
+.emptyIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(78, 122, 64, 0.1);
   color: var(--color-green-accent);
+  margin-bottom: 6px;
+}
+
+.emptyTitle {
+  font-size: 1.15rem;
+  font-weight: var(--fw-bold);
+  color: var(--color-green-deep);
+  letter-spacing: -0.02em;
+}
+
+.emptyText {
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+  max-width: 340px;
+  line-height: 1.6;
+}
+
+.emptyBtn {
+  display: inline-flex;
+  margin-top: 12px;
+  padding: 12px 28px;
+  border-radius: var(--radius-full);
+  background: var(--color-green-deep);
+  color: var(--color-white);
+  font-size: 0.875rem;
+  font-weight: var(--fw-semibold);
+  transition: background 0.15s;
+}
+
+.emptyBtn:hover { background: var(--color-green-mid); }
+
+.loadingText {
+  padding: 40px 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
 }
 
 /* ── Items List ── */
@@ -144,15 +186,50 @@
 }
 
 .itemImage {
-  width: 72px;
-  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
   border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
   flex-shrink: 0;
+  overflow: hidden;
   font-size: 0.58rem;
-  color: rgba(43,59,39,0.3);
-  text-transform: none;
-  letter-spacing: 0;
+  color: var(--color-text-muted);
 }
+
+.itemImage img { width: 100%; height: 100%; object-fit: contain; padding: 5px; }
+
+.itemVariant {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+}
+
+.itemUnit {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+}
+
+.freteNote {
+  font-size: 0.74rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin-top: 10px;
+}
+
+.keepShopping {
+  display: block;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+  margin-bottom: 16px;
+  transition: color 0.15s;
+}
+
+.keepShopping:hover { color: var(--color-green-deep); }
 
 .itemInfo {
   flex: 1;
@@ -166,10 +243,16 @@
   font-size: 0.9rem;
   font-weight: var(--fw-semibold);
   color: var(--color-green-deep);
-  white-space: nowrap;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  transition: color 0.15s;
 }
+
+.itemName:hover { color: var(--color-green-accent); }
 
 .itemFlavor {
   font-size: 0.78rem;

@@ -1,185 +1,203 @@
 import { useState, useRef, useEffect } from 'react';
-import {
-  Search, Heart, User, ShoppingCart, ChevronDown,
-  Menu, X, Leaf, Package, MapPin, Settings, LogOut,
-} from 'lucide-react';
+import { Search, Heart, ShoppingCart, ChevronDown, Menu, X, Leaf } from 'lucide-react';
 import styles from './Header.module.css';
+import Link from '../ui/Link';
+import { navigate } from '../../lib/router';
 import { useFavorites } from '../../context/FavoritesContext';
-
-const navLinks = [
-  { label: 'Loja',      href: '/loja',       hasDropdown: true },
-  { label: 'Whey',      href: '/whey' },
-  { label: 'Pré-treino',href: '/pre-treino' },
-  { label: 'Granel',    href: '/granel' },
-];
-
-const mockUser = {
-  name: 'João Costa',
-  initials: 'JC',
-  email: 'joao.costa@email.com',
-};
-
-function navigate(path) {
-  history.pushState({}, '', path);
-  window.dispatchEvent(new PopStateEvent('popstate'));
-}
+import { useCart } from '../../context/CartContext';
+import { useCatalog } from '../../data/CatalogContext';
 
 export default function Header() {
-  const [mobileOpen,  setMobileOpen]  = useState(false);
-  const [cartCount]                   = useState(2);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [searchOpen,  setSearchOpen]  = useState(false);
-  const profileRef = useRef(null);
-  const searchRef  = useRef(null);
+  const { categories } = useCatalog();
   const { favoritesCount } = useFavorites();
+  const { count: cartCount } = useCart();
+
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [shopOpen, setShopOpen] = useState(false);
+  const [term, setTerm] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const shopRef = useRef(null);
+  const searchRef = useRef(null);
+  const searchInputRef = useRef(null);
+
+  // Top 4 categories get a direct slot in the bar; the rest live in the dropdown.
+  const quickLinks = categories.slice(0, 4);
 
   useEffect(() => {
     const handler = (e) => {
-      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
-      if (searchRef.current  && !searchRef.current.contains(e.target))  setSearchOpen(false);
+      if (shopRef.current && !shopRef.current.contains(e.target)) setShopOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target)) setSearchOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
+
+  function submitSearch(e) {
+    e?.preventDefault();
+    const q = term.trim();
+    if (!q) return;
+    setSearchOpen(false);
+    setMobileOpen(false);
+    navigate(`/busca?q=${encodeURIComponent(q)}`);
+  }
+
   return (
     <header className={styles.header}>
       <div className={`container ${styles.inner}`}>
-
-        {/* ── Logo ── */}
-        <a href="/" className={styles.logo}>
-          <span className={styles.logoIcon}><Leaf size={17} strokeWidth={2.3} /></span>
+        <Link href="/" className={styles.logo} onClick={() => setMobileOpen(false)}>
+          <span className={styles.logoIcon}>
+            <Leaf size={17} strokeWidth={2.3} />
+          </span>
           <span className={styles.logoText}>
             natura<em className={styles.logoVita}>vita</em>
           </span>
-        </a>
+        </Link>
 
-        {/* ── Nav ── */}
-        <nav className={`${styles.nav} ${mobileOpen ? styles.open : ''}`}>
-          {navLinks.map((link) => (
-            <a key={link.label} href={link.href} className={styles.navLink}>
-              {link.label}
-              {link.hasDropdown && (
-                <ChevronDown size={10} strokeWidth={2.5} className={styles.chevron} />
-              )}
-            </a>
-          ))}
-        </nav>
-
-        {/* ── Actions ── */}
-        <div className={styles.actions}>
-
-          {/* Search — expands inline */}
-          <div
-            className={`${styles.searchWrap} ${searchOpen ? styles.searchExpanded : ''}`}
-            ref={searchRef}
-          >
-            <Search
-              size={16}
-              strokeWidth={1.9}
-              className={styles.searchIcon}
-              onClick={() => setSearchOpen(true)}
-            />
-            <input
-              type="search"
-              placeholder="Buscar produtos..."
-              className={styles.searchInput}
-              onKeyDown={(e) => e.key === 'Escape' && setSearchOpen(false)}
-              tabIndex={searchOpen ? 0 : -1}
-            />
-          </div>
-
-          <div className={styles.divider} />
-
-          {/* Favorites */}
-          <button
-            className={`${styles.iconBtn} ${styles.heartBtn}`}
-            aria-label="Favoritos"
-            onClick={() => navigate('/favoritos')}
-          >
-            <Heart size={17} strokeWidth={1.9} />
-            {favoritesCount > 0 && <span className={styles.dot}>{favoritesCount}</span>}
-          </button>
-
-          {/* Profile */}
-          <div className={styles.profileWrapper} ref={profileRef}>
+        <nav className={styles.nav}>
+          <div className={styles.dropdownWrap} ref={shopRef}>
             <button
-              className={`${styles.iconBtn} ${profileOpen ? styles.iconBtnActive : ''}`}
-              aria-label="Conta"
-              onClick={() => setProfileOpen((v) => !v)}
+              className={styles.navLink}
+              onClick={() => setShopOpen((v) => !v)}
+              aria-expanded={shopOpen}
             >
-              <User size={17} strokeWidth={1.9} />
+              Loja
+              <ChevronDown size={10} strokeWidth={2.5} className={styles.chevron} />
             </button>
 
-            {profileOpen && (
-              <div className={styles.profileDropdown}>
-                <div className={styles.pdHeader}>
-                  <div className={styles.pdAvatar}>{mockUser.initials}</div>
-                  <div>
-                    <p className={styles.pdName}>{mockUser.name}</p>
-                    <p className={styles.pdEmail}>{mockUser.email}</p>
-                  </div>
-                </div>
-
-                <ul className={styles.pdList}>
-                  {[
-                    { icon: <User size={14}/>,    label: 'Minha Conta',    action: () => navigate('/perfil') },
-                    { icon: <Package size={14}/>,  label: 'Meus Pedidos',   action: () => navigate('/perfil') },
-                    { icon: <Heart size={14}/>,    label: 'Favoritos',      action: () => navigate('/favoritos'), count: favoritesCount },
-                    { icon: <MapPin size={14}/>,   label: 'Endereços',      action: null },
-                    { icon: <Settings size={14}/>, label: 'Configurações',  action: () => navigate('/configuracoes') },
-                  ].map(({ icon, label, action, count }) => (
-                    <li key={label}>
-                      <button
-                        className={styles.pdItem}
-                        onClick={() => { action?.(); setProfileOpen(false); }}
-                      >
-                        <span className={styles.pdItemIcon}>{icon}</span>
-                        {label}
-                        {count > 0 && <span className={styles.pdCount}>{count}</span>}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className={styles.pdDivider} />
-
-                <ul className={styles.pdList} style={{ paddingBottom: 8 }}>
-                  <li>
-                    <button
-                      className={`${styles.pdItem} ${styles.pdLogout}`}
-                      onClick={() => { alert('Saindo...'); setProfileOpen(false); }}
+            {shopOpen && (
+              <div className={styles.megaMenu}>
+                <Link href="/loja" className={styles.megaAll} onClick={() => setShopOpen(false)}>
+                  Ver todos os produtos →
+                </Link>
+                <div className={styles.megaGrid}>
+                  {categories.map((c) => (
+                    <Link
+                      key={c.id}
+                      href={`/${c.slug}`}
+                      className={styles.megaItem}
+                      onClick={() => setShopOpen(false)}
                     >
-                      <span className={styles.pdItemIcon}><LogOut size={14} /></span>
-                      Sair
-                    </button>
-                  </li>
-                </ul>
+                      <span className={styles.megaName}>{c.name}</span>
+                      <span className={styles.megaCount}>{c.count}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </div>
 
-          {/* Cart pill */}
-          <button
-            className={styles.cartPill}
-            aria-label="Carrinho"
-            onClick={() => navigate('/carrinho')}
+          {quickLinks.map((c) => (
+            <Link key={c.id} href={`/${c.slug}`} className={styles.navLink}>
+              {c.name}
+            </Link>
+          ))}
+        </nav>
+
+        <div className={styles.actions}>
+          <div
+            className={`${styles.searchWrap} ${searchOpen ? styles.searchExpanded : ''}`}
+            ref={searchRef}
           >
+            <button
+              type="button"
+              className={styles.searchIconBtn}
+              aria-label="Buscar produtos"
+              onClick={() => {
+                setSearchOpen(true);
+                setTimeout(() => searchInputRef.current?.focus(), 80);
+              }}
+            >
+              <Search size={16} strokeWidth={1.9} />
+            </button>
+            <form onSubmit={submitSearch} className={styles.searchForm}>
+              <input
+                ref={searchInputRef}
+                type="search"
+                placeholder="Buscar produtos..."
+                className={styles.searchInput}
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
+                onKeyDown={(e) => e.key === 'Escape' && setSearchOpen(false)}
+                tabIndex={searchOpen ? 0 : -1}
+              />
+            </form>
+          </div>
+
+          <span className={styles.divider} />
+
+          <Link href="/favoritos" className={`${styles.iconBtn} ${styles.heartBtn}`} aria-label="Favoritos">
+            <Heart size={17} strokeWidth={1.9} />
+            {favoritesCount > 0 && <span className={styles.dot}>{favoritesCount}</span>}
+          </Link>
+
+          <Link href="/carrinho" className={styles.cartPill} aria-label="Carrinho">
             <ShoppingCart size={15} strokeWidth={2} />
             <span className={styles.cartLabel}>Carrinho</span>
             {cartCount > 0 && <span className={styles.cartCount}>{cartCount}</span>}
-          </button>
+          </Link>
 
-          {/* Mobile toggle */}
           <button
             className={styles.mobileToggle}
             onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Menu"
+            aria-label={mobileOpen ? 'Fechar menu' : 'Abrir menu'}
+            aria-expanded={mobileOpen}
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
+
+      {mobileOpen && (
+        <div className={styles.mobilePanel}>
+          <form onSubmit={submitSearch} className={styles.mobileSearch}>
+            <Search size={16} strokeWidth={2} />
+            <input
+              type="search"
+              placeholder="Buscar produtos..."
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+            />
+            <button type="submit" className={styles.mobileSearchBtn}>
+              buscar
+            </button>
+          </form>
+
+          <Link href="/loja" className={styles.mobileAll} onClick={() => setMobileOpen(false)}>
+            Ver todos os produtos →
+          </Link>
+
+          <div className={styles.mobileList}>
+            {categories.map((c) => (
+              <Link
+                key={c.id}
+                href={`/${c.slug}`}
+                className={styles.mobileItem}
+                onClick={() => setMobileOpen(false)}
+              >
+                {c.name}
+                <span className={styles.mobileCount}>{c.count}</span>
+              </Link>
+            ))}
+          </div>
+
+          <div className={styles.mobileFooter}>
+            <Link href="/favoritos" className={styles.mobileSecondary} onClick={() => setMobileOpen(false)}>
+              <Heart size={15} /> Favoritos {favoritesCount > 0 && `(${favoritesCount})`}
+            </Link>
+            <Link href="/carrinho" className={styles.mobileSecondary} onClick={() => setMobileOpen(false)}>
+              <ShoppingCart size={15} /> Carrinho {cartCount > 0 && `(${cartCount})`}
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

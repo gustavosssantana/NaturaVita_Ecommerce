@@ -1,97 +1,47 @@
-import { useState, useEffect, useMemo } from 'react';
-import { X, Heart, Package, Clock, RefreshCw } from 'lucide-react';
+import { Minus, Plus, X, Package, Clock, ShieldCheck, ShoppingBag } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import StarRating from '../components/ui/StarRating';
+import AnnouncementBar from '../components/layout/AnnouncementBar';
+import ProductCard from '../components/ui/ProductCard';
+import Link from '../components/ui/Link';
 import { useCatalog } from '../data/CatalogContext';
+import { useCart, useCartItems } from '../context/CartContext';
+import { money, installment } from '../lib/format';
+import { navigate } from '../lib/router';
 import styles from './CartPage.module.css';
 
-const VALID_COUPONS = {
-  'BEMVINDO15':    0.15,
-  'NATURAVITA10':  0.10,
-};
-
 const FRETE_THRESHOLD = 199;
-const FRETE_COST      = 12;
+const FRETE_COST = 19.9;
 
-const STEPS = ['carrinho', 'entrega', 'pagamento', 'concluído'];
-
-function buildItems(initialIds, products) {
-  return initialIds
-    .map((i) => ({ ...i, product: products.find((p) => p.id === i.productId) }))
-    .filter((i) => i.product);
-}
+const STEPS = ['carrinho', 'entrega', 'pagamento'];
 
 export default function CartPage() {
-  const { products } = useCatalog();
-  const initialIds = useMemo(
-    () => products.slice(0, 3).map((p, idx) => ({ productId: p.id, qty: idx === 1 ? 2 : 1 })),
-    [products]
-  );
-  const [items,         setItems]         = useState([]);
-  const [couponInput,   setCouponInput]   = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [couponError,   setCouponError]   = useState(false);
+  const { products, loading } = useCatalog();
+  const { setQty, removeItem } = useCart();
+  const items = useCartItems(products);
 
-  useEffect(() => {
-    if (items.length === 0 && initialIds.length > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setItems(buildItems(initialIds, products));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialIds]);
+  const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
+  const frete = subtotal === 0 ? 0 : subtotal >= FRETE_THRESHOLD ? 0 : FRETE_COST;
+  const freteLeft = Math.max(0, FRETE_THRESHOLD - subtotal);
+  const total = subtotal + frete;
 
-  function updateQty(productId, delta) {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.productId === productId
-          ? { ...item, qty: Math.max(1, item.qty + delta) }
-          : item
-      )
-    );
-  }
-
-  function removeItem(productId) {
-    setItems((prev) => prev.filter((i) => i.productId !== productId));
-  }
-
-  function applyCoupon() {
-    const code = couponInput.trim().toUpperCase();
-    if (VALID_COUPONS[code]) {
-      setAppliedCoupon({ code, pct: VALID_COUPONS[code] });
-      setCouponError(false);
-    } else {
-      setAppliedCoupon(null);
-      setCouponError(true);
-    }
-  }
-
-  const subtotal      = items.reduce((s, i) => s + i.product.price * i.qty, 0);
-  const frete         = subtotal >= FRETE_THRESHOLD ? 0 : FRETE_COST;
-  const freteLeft     = Math.max(0, FRETE_THRESHOLD - subtotal);
-  const couponAmt     = appliedCoupon ? Math.round(subtotal * appliedCoupon.pct) : 0;
-  const total         = subtotal + frete - couponAmt;
-
-  const cartIds       = items.map((i) => i.productId);
-  const suggestions   = products.filter((p) => !cartIds.includes(p.id)).slice(0, 4);
-
-  const fmt = (n) => `R$ ${n.toFixed(2).replace('.', ',')}`;
+  const cartIds = items.map((i) => i.id);
+  const suggestions = products.filter((p) => !cartIds.includes(p.id) && p.image).slice(0, 4);
 
   return (
     <>
+      <AnnouncementBar />
       <Header />
       <main className={styles.main}>
-
-        {/* ── Step indicator ── */}
         <div className={styles.stepsBar}>
           <div className="container">
             <div className={styles.steps}>
               {STEPS.map((label, i) => (
                 <div key={label} className={styles.stepItem}>
-                  {i > 0 && <span className={`${styles.stepLine} ${i <= 0 ? styles.stepLineDone : ''}`} />}
+                  {i > 0 && <span className={styles.stepLine} />}
                   <div className={styles.stepCircleWrap}>
                     <span className={`${styles.stepCircle} ${i === 0 ? styles.stepActive : ''}`}>
-                      {i === 0 ? '✓' : i + 1}
+                      {i + 1}
                     </span>
                     <span className={`${styles.stepLabel} ${i === 0 ? styles.stepLabelActive : ''}`}>
                       {label}
@@ -103,59 +53,88 @@ export default function CartPage() {
           </div>
         </div>
 
-        {/* ── Main content ── */}
         <section className={styles.content}>
           <div className="container">
             <div className={styles.grid}>
-
-              {/* Left — cart items */}
               <div>
                 <div className={styles.cartHeader}>
-                  <h1 className={styles.cartTitle}>seu <em className={styles.cartTitleItalic}>carrinho.</em></h1>
+                  <h1 className={styles.cartTitle}>
+                    seu <em className={styles.cartTitleItalic}>carrinho.</em>
+                  </h1>
                   {items.length > 0 && (
                     <p className={styles.cartSub}>
-                      {items.reduce((s, i) => s + i.qty, 0)} {items.length === 1 ? 'item' : 'itens'}
+                      {items.reduce((s, i) => s + i.qty, 0)}{' '}
+                      {items.reduce((s, i) => s + i.qty, 0) === 1 ? 'item' : 'itens'}
                       {freteLeft > 0
-                        ? ` · você está R$${freteLeft} do frete grátis`
-                        : ' · frete grátis no seu pedido 🎉'}
+                        ? ` · faltam ${money(freteLeft)} para o frete grátis`
+                        : ' · você ganhou frete grátis 🎉'}
                     </p>
                   )}
                 </div>
 
-                {items.length === 0 ? (
+                {loading && items.length === 0 ? (
+                  <p className={styles.loadingText}>Carregando seu carrinho…</p>
+                ) : items.length === 0 ? (
                   <div className={styles.empty}>
-                    <p>Seu carrinho está vazio.</p>
-                    <a href="/loja" className={styles.emptyLink}>ver produtos →</a>
+                    <span className={styles.emptyIcon}>
+                      <ShoppingBag size={30} />
+                    </span>
+                    <p className={styles.emptyTitle}>Seu carrinho está vazio</p>
+                    <p className={styles.emptyText}>
+                      Adicione produtos e eles aparecem aqui — salvos mesmo se você fechar a página.
+                    </p>
+                    <Link href="/loja" className={styles.emptyBtn}>
+                      Ver produtos
+                    </Link>
                   </div>
                 ) : (
                   <div className={styles.itemsList}>
                     {items.map((item, idx) => (
-                      <div key={item.productId} className={`${styles.itemRow} ${idx < items.length - 1 ? styles.itemRowBorder : ''}`}>
-                        <div className={`${styles.itemImage} ${item.product.image ? '' : 'img-placeholder'}`}>
+                      <div
+                        key={`${item.id}-${item.variantId}`}
+                        className={`${styles.itemRow} ${idx < items.length - 1 ? styles.itemRowBorder : ''}`}
+                      >
+                        <Link href={`/produto/${item.id}`} className={styles.itemImage}>
                           {item.product.image ? (
-                            <img src={item.product.image} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={item.product.image} alt={item.product.name} />
                           ) : (
-                            <span>produto</span>
+                            <span>sem foto</span>
                           )}
-                        </div>
+                        </Link>
 
                         <div className={styles.itemInfo}>
-                          <p className={styles.itemName}>{item.product.name}</p>
-                          <p className={styles.itemFlavor}>{item.product.flavor}</p>
-                          <button className={styles.subscribeBtn}>
-                            <Heart size={11} />
-                            assinar e economizar 15%
-                          </button>
+                          <Link href={`/produto/${item.id}`} className={styles.itemName}>
+                            {item.product.name}
+                          </Link>
+                          {item.variant && item.variant.label !== 'Único' && (
+                            <p className={styles.itemVariant}>{item.variant.label}</p>
+                          )}
+                          <p className={styles.itemUnit}>{money(item.unit)} cada</p>
                         </div>
 
                         <div className={styles.itemRight}>
                           <div className={styles.qtyPill}>
-                            <button className={styles.qtyBtn} onClick={() => updateQty(item.productId, -1)}>−</button>
+                            <button
+                              className={styles.qtyBtn}
+                              onClick={() => setQty(item.id, item.variantId, item.qty - 1)}
+                              aria-label="Diminuir"
+                            >
+                              <Minus size={12} />
+                            </button>
                             <span className={styles.qtyVal}>{item.qty}</span>
-                            <button className={styles.qtyBtn} onClick={() => updateQty(item.productId, +1)}>+</button>
+                            <button
+                              className={styles.qtyBtn}
+                              onClick={() => setQty(item.id, item.variantId, item.qty + 1)}
+                              aria-label="Aumentar"
+                            >
+                              <Plus size={12} />
+                            </button>
                           </div>
-                          <span className={styles.itemPrice}>{fmt(item.product.price * item.qty)}</span>
-                          <button className={styles.removeBtn} onClick={() => removeItem(item.productId)}>
+                          <span className={styles.itemPrice}>{money(item.subtotal)}</span>
+                          <button
+                            className={styles.removeBtn}
+                            onClick={() => removeItem(item.id, item.variantId)}
+                          >
                             remover <X size={11} />
                           </button>
                         </div>
@@ -165,108 +144,75 @@ export default function CartPage() {
                 )}
               </div>
 
-              {/* Right — summary */}
-              <div className={styles.summary}>
-                <h2 className={styles.summaryTitle}>resumo</h2>
+              {/* ── Summary ── */}
+              {items.length > 0 && (
+                <div className={styles.summary}>
+                  <h2 className={styles.summaryTitle}>resumo</h2>
 
-                <div className={styles.summaryLines}>
-                  <div className={styles.summaryLine}>
-                    <span>subtotal</span>
-                    <span>{fmt(subtotal)}</span>
+                  <div className={styles.summaryLines}>
+                    <div className={styles.summaryLine}>
+                      <span>subtotal</span>
+                      <span>{money(subtotal)}</span>
+                    </div>
+                    <div className={styles.summaryLine}>
+                      <span>frete estimado</span>
+                      <span className={frete === 0 ? styles.freteFree : ''}>
+                        {frete === 0 ? 'grátis' : money(frete)}
+                      </span>
+                    </div>
                   </div>
-                  <div className={styles.summaryLine}>
-                    <span>frete</span>
-                    <span className={frete === 0 ? styles.freteFree : ''}>
-                      {frete === 0 ? 'grátis' : fmt(frete)}
+
+                  <p className={styles.freteNote}>
+                    O valor exato do frete é calculado pelo seu CEP na próxima etapa.
+                  </p>
+
+                  <div className={styles.summaryDivider} />
+
+                  <div className={styles.totalRow}>
+                    <span className={styles.totalLabel}>total</span>
+                    <span className={styles.totalValue}>{money(total)}</span>
+                  </div>
+                  <p className={styles.installments}>ou {installment(total)} sem juros</p>
+
+                  <button className={styles.ctaBtn} onClick={() => navigate('/checkout')}>
+                    continuar para entrega →
+                  </button>
+
+                  <Link href="/loja" className={styles.keepShopping}>
+                    continuar comprando
+                  </Link>
+
+                  <div className={styles.summaryBenefits}>
+                    <span>
+                      <ShieldCheck size={12} /> pagamento seguro
+                    </span>
+                    <span>
+                      <Clock size={12} /> envio em 24h úteis
+                    </span>
+                    <span>
+                      <Package size={12} /> frete grátis acima de {money(FRETE_THRESHOLD)}
                     </span>
                   </div>
-                  {appliedCoupon && (
-                    <div className={`${styles.summaryLine} ${styles.couponLine}`}>
-                      <span>cupom ({appliedCoupon.code})</span>
-                      <span>− {fmt(couponAmt)}</span>
-                    </div>
-                  )}
                 </div>
-
-                <div className={styles.couponRow}>
-                  <input
-                    className={`${styles.couponInput} ${couponError ? styles.couponInputError : ''}`}
-                    placeholder="código de cupom"
-                    value={couponInput}
-                    onChange={(e) => { setCouponInput(e.target.value); setCouponError(false); }}
-                    onKeyDown={(e) => e.key === 'Enter' && applyCoupon()}
-                  />
-                  <button className={styles.couponBtn} onClick={applyCoupon}>aplicar</button>
-                </div>
-                {couponError && <p className={styles.couponError}>Cupom inválido</p>}
-
-                <div className={styles.summaryDivider} />
-
-                <div className={styles.totalRow}>
-                  <span className={styles.totalLabel}>total</span>
-                  <span className={styles.totalValue}>{fmt(total)}</span>
-                </div>
-                <p className={styles.installments}>em até 6x sem juros</p>
-
-                <a href="/entrega" className={styles.ctaBtn}>
-                  continuar para entrega →
-                </a>
-
-                <div className={styles.summaryBenefits}>
-                  <span><Package size={12} /> pagamento seguro</span>
-                  <span><Clock size={12} /> envio em 24h</span>
-                  <span><RefreshCw size={12} /> troca grátis em 30d</span>
-                </div>
-              </div>
-
+              )}
             </div>
           </div>
         </section>
 
-        {/* ── Frequentemente comprados juntos ── */}
         {suggestions.length > 0 && (
           <section className={styles.suggestionsSection}>
             <div className="container">
               <h2 className={styles.suggestionsTitle}>
-                frequentemente comprados <em className={styles.suggestionsItalic}>juntos</em>
+                aproveite e leve <em className={styles.suggestionsItalic}>junto.</em>
               </h2>
               <div className={styles.suggestionsGrid}>
                 {suggestions.map((p) => (
-                  <a key={p.id} href={`/produto/${p.id}`} className={styles.suggCard}>
-                    <div className={`${styles.suggImage} ${p.image ? '' : 'img-placeholder'}`}>
-                      {p.image ? (
-                        <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <span>produto</span>
-                      )}
-                    </div>
-                    <div className={styles.suggMeta}>
-                      <p className={styles.suggName}>{p.name}</p>
-                      <div className={styles.suggRow}>
-                        <span className={styles.suggPrice}>R$ {p.price}</span>
-                        <StarRating rating={p.rating} size={10} />
-                      </div>
-                    </div>
-                    <button
-                      className={styles.suggAddBtn}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setItems((prev) => {
-                          const exists = prev.find((i) => i.productId === p.id);
-                          if (exists) return prev.map((i) => i.productId === p.id ? { ...i, qty: i.qty + 1 } : i);
-                          return [...prev, { productId: p.id, qty: 1, product: p }];
-                        });
-                      }}
-                    >
-                      + add
-                    </button>
-                  </a>
+                  <ProductCard key={p.id} product={p} />
                 ))}
               </div>
             </div>
           </section>
         )}
-
       </main>
       <Footer />
     </>

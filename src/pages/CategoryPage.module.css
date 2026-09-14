@@ -103,7 +103,7 @@
 /* ── Sticky Filter Bar ── */
 .filtersBar {
   position: sticky;
-  top: 64px;
+  top: 72px;
   z-index: 50;
   background: rgba(245, 241, 234, 0.97);
   backdrop-filter: blur(12px);
@@ -369,17 +369,64 @@
   grid-template-columns: 1fr;
 }
 
+/* ── Skeleton ── */
+@keyframes shimmer {
+  0%   { opacity: 0.55; }
+  50%  { opacity: 0.9; }
+  100% { opacity: 0.55; }
+}
+
+.skeleton {
+  aspect-ratio: 0.72;
+  border-radius: var(--radius-lg);
+  background: rgba(43, 59, 39, 0.07);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* ── Dropdown aligned to the right edge (sort) ── */
+.dropdownRight { left: auto; right: 0; }
+
 /* ── Empty State ── */
 .empty {
   text-align: center;
-  padding: 80px 0;
+  padding: 72px 20px;
   color: var(--color-text-muted);
   font-size: 0.9rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
+
+.emptyTitle {
+  font-size: 1.15rem;
+  font-weight: var(--fw-bold);
+  color: var(--color-green-deep);
+  letter-spacing: -0.02em;
+}
+
+.emptyText {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  max-width: 360px;
+  line-height: 1.6;
+}
+
+.emptyBtn {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+  padding: 12px 26px;
+  border-radius: var(--radius-full);
+  background: var(--color-green-deep);
+  color: var(--color-white);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: var(--fw-semibold);
+  transition: background 0.15s;
+}
+
+.emptyBtn:hover { background: var(--color-green-mid); }
 
 /* ── Load More ── */
 .loadMoreWrapper {
@@ -417,12 +464,17 @@
   .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 }
 
+@media (max-width: 600px) {
+  .filtersBar { top: 60px; }
+  .filterRow { gap: 8px; }
+  .filterPills { flex: 1; min-width: 0; }
+  .sortBtn { padding: 6px 11px; }
+  .sortBtn span { display: none; }
+}
+
 @media (max-width: 480px) {
   .heroTitle { font-size: 2rem; }
   .pageHero { padding: 28px 0 24px; }
   .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .filterRow { gap: 8px; }
-  .filterRight .clearBtn { display: none; }
-  .resultsBar { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .resultsControls { width: 100%; justify-content: flex-end; }
+  .listing { padding: 24px 0 60px; }
 }

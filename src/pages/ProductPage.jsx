@@ -1,37 +1,64 @@
-import { useState } from 'react';
-import { Minus, Plus, Package, Clock, RefreshCw, ShieldCheck } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Minus, Plus, Package, Clock, ShieldCheck, Heart, Check, ExternalLink } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import AnnouncementBar from '../components/layout/AnnouncementBar';
 import StarRating from '../components/ui/StarRating';
-import { productFlavors, productHighlights, productDescription } from '../data/mockData';
+import ProductCard from '../components/ui/ProductCard';
+import CartToast from '../components/ui/CartToast';
+import Link from '../components/ui/Link';
 import { useCatalog } from '../data/CatalogContext';
+import { useCart } from '../context/CartContext';
+import { useFavorites } from '../context/FavoritesContext';
+import { money, installment, discountPercent, buyUrl } from '../lib/format';
 import styles from './ProductPage.module.css';
 
-const TABS = ['Descrição', 'Tabela nutricional', 'Como usar', 'Reviews', 'FAQ'];
-const THUMBS = [0, 1, 2, 3];
-
 export default function ProductPage({ productId }) {
-  const { products, categories, loading } = useCatalog();
-  const product = products.find((p) => p.id === productId) || products[0] || null;
+  const { getProduct, categories, products, store, loading } = useCatalog();
+  const { addItem } = useCart();
+  const { isFavorite, toggleFavorite } = useFavorites();
 
-  const flavors = product ? (productFlavors[product.category] || ['Natural']) : ['Natural'];
-  const highlights = product ? (productHighlights[product.category] || []) : [];
+  const product = getProduct(productId);
 
-  const [selectedFlavor, setSelectedFlavor] = useState(
-    flavors.find((f) => f.toLowerCase() === product?.flavor) || flavors[0]
-  );
-  const [selectedSize, setSelectedSize] = useState(product?.variants?.[0]);
+  const [selectedVariant, setSelectedVariant] = useState(null);
   const [qty, setQty] = useState(1);
-  const [activeTab, setActiveTab] = useState(0);
-  const [activeThumb, setActiveThumb] = useState(0);
+  const [activeImage, setActiveImage] = useState(0);
+  const [added, setAdded] = useState(false);
+
+  const related = useMemo(() => {
+    if (!product) return [];
+    return products
+      .filter((p) => p.category === product.category && p.id !== product.id && p.image)
+      .slice(0, 4);
+  }, [products, product]);
+
+  if (loading && !product) {
+    return (
+      <>
+        <Header />
+        <main className={styles.stateWrap}>
+          <div className="container">
+            <p className={styles.stateText}>Carregando produto…</p>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   if (!product) {
     return (
       <>
         <Header />
-        <main>
-          <div className="container" style={{ padding: '80px 0', textAlign: 'center' }}>
-            <p>{loading ? 'Carregando produto…' : 'Produto não encontrado.'}</p>
+        <main className={styles.stateWrap}>
+          <div className="container">
+            <h1 className={styles.stateTitle}>Produto não encontrado</h1>
+            <p className={styles.stateText}>
+              Esse produto pode ter saído do catálogo ou o link está incorreto.
+            </p>
+            <Link href="/loja" className={styles.stateBtn}>
+              Ver todos os produtos
+            </Link>
           </div>
         </main>
         <Footer />
@@ -40,144 +67,137 @@ export default function ProductPage({ productId }) {
   }
 
   const category = categories.find((c) => c.slug === product.category);
+  const variant = product.variants?.find((v) => v.id === selectedVariant) || product.variants?.[0] || null;
+  const unitPrice = variant?.price || product.price;
+  const off = discountPercent(product.price, product.originalPrice);
+  const favorited = isFavorite(product.id);
+  const images = product.images?.length ? product.images : product.image ? [product.image] : [];
+  const checkoutUrl = buyUrl(store?.url, product, variant?.id, qty);
+  const hasVariants = (product.variants?.length || 0) > 1;
 
-  const discountPct = product.originalPrice
-    ? Math.round((1 - product.price / product.originalPrice) * 100)
-    : null;
-
-  const totalPrice = (product.price * qty).toFixed(2).replace('.', ',');
-  const installment = (product.price / 6).toFixed(2).replace('.', ',');
-
-  const related = products
-    .filter((p) => p.category !== product.category)
-    .slice(0, 4);
+  function handleAdd() {
+    addItem(product, qty, variant?.id);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1600);
+  }
 
   return (
     <>
+      <AnnouncementBar />
       <Header />
       <main>
-
-        {/* ── Breadcrumb ── */}
         <div className={styles.breadcrumbBar}>
           <div className="container">
             <nav className={styles.breadcrumb}>
-              <a href="/loja">Loja</a>
-              <span>›</span>
-              <a href={`/${product.category}`}>{category?.name}</a>
+              <Link href="/loja">Loja</Link>
+              {category && (
+                <>
+                  <span>›</span>
+                  <Link href={`/${category.slug}`}>{category.name}</Link>
+                </>
+              )}
               <span>›</span>
               <span className={styles.breadcrumbCurrent}>{product.name}</span>
             </nav>
           </div>
         </div>
 
-        {/* ── Main Product ── */}
         <section className={styles.productSection}>
           <div className="container">
             <div className={styles.productGrid}>
-
-              {/* Gallery */}
+              {/* ── Gallery ── */}
               <div className={styles.gallery}>
-                <div className={styles.thumbStrip}>
-                  {THUMBS.map((i) => {
-                    const src = product.images?.[i] || product.image;
-                    return (
-                      <div
-                        key={i}
-                        className={`${styles.thumb} ${activeThumb === i ? styles.thumbActive : ''} ${src ? '' : 'img-placeholder'}`}
-                        onClick={() => setActiveThumb(i)}
+                {images.length > 1 && (
+                  <div className={styles.thumbStrip}>
+                    {images.slice(0, 6).map((src, i) => (
+                      <button
+                        key={src + i}
+                        className={`${styles.thumb} ${activeImage === i ? styles.thumbActive : ''}`}
+                        onClick={() => setActiveImage(i)}
+                        aria-label={`Imagem ${i + 1}`}
                       >
-                        {src ? (
-                          <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <span>v{i + 1}</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className={`${styles.mainImage} ${product.image ? '' : 'img-placeholder'}`}>
-                  {(product.images?.[activeThumb] || product.image) ? (
-                    <img
-                      src={product.images?.[activeThumb] || product.image}
-                      alt={product.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
+                        <img src={src} alt="" loading="lazy" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className={styles.mainImage}>
+                  {images[activeImage] ? (
+                    <img src={images[activeImage]} alt={product.name} />
                   ) : (
-                    <span>produto</span>
+                    <span className={styles.noImage}>sem foto disponível</span>
                   )}
+                  {off && <span className={styles.imageBadge}>-{off}%</span>}
                 </div>
               </div>
 
-              {/* Info */}
+              {/* ── Info ── */}
               <div className={styles.productInfo}>
-
-                <p className={styles.productTag}>
-                  <span className={styles.tagDot} />
-                  {category?.name}{product.type ? ` · ${product.type}` : ''}
-                </p>
+                {category && (
+                  <Link href={`/${category.slug}`} className={styles.productTag}>
+                    <span className={styles.tagDot} />
+                    {category.name}
+                  </Link>
+                )}
 
                 <h1 className={styles.productName}>{product.name}</h1>
+
                 <div className={styles.ratingRow}>
                   <StarRating rating={product.rating} size={13} />
                   <span className={styles.ratingValue}>{product.rating}</span>
-                  <span className={styles.ratingCount}>· {product.reviews.toLocaleString('pt-BR')} reviews</span>
+                  <span className={styles.ratingCount}>
+                    · {product.reviews.toLocaleString('pt-BR')} avaliações
+                  </span>
+                  {product.sku && <span className={styles.sku}>SKU {product.sku}</span>}
                 </div>
 
                 <div className={styles.priceBlock}>
                   <div className={styles.priceRow}>
-                    <span className={styles.price}>R$ {product.price}</span>
+                    <span className={styles.price}>{money(unitPrice)}</span>
                     {product.originalPrice && (
                       <>
-                        <span className={styles.originalPrice}>R$ {product.originalPrice}</span>
-                        <span className={styles.discountBadge}>{discountPct}%</span>
+                        <span className={styles.originalPrice}>{money(product.originalPrice)}</span>
+                        <span className={styles.discountBadge}>-{off}%</span>
                       </>
                     )}
                   </div>
                   <p className={styles.installments}>
-                    ou 6x R${installment} sem juros
+                    ou {installment(unitPrice)} sem juros
                   </p>
                 </div>
 
                 <hr className={styles.divider} />
 
-                {/* Flavor */}
-                <div className={styles.optionGroup}>
-                  <p className={styles.optionLabel}>Sabor</p>
-                  <div className={styles.optionPills}>
-                    {flavors.map((f) => (
-                      <button
-                        key={f}
-                        className={`${styles.optionPill} ${selectedFlavor === f ? styles.flavorActive : ''}`}
-                        onClick={() => setSelectedFlavor(f)}
-                      >
-                        {f}
-                      </button>
-                    ))}
+                {hasVariants && (
+                  <div className={styles.optionGroup}>
+                    <p className={styles.optionLabel}>Opção</p>
+                    <div className={styles.optionPills}>
+                      {product.variants.map((v) => (
+                        <button
+                          key={v.id}
+                          className={`${styles.optionPill} ${variant?.id === v.id ? styles.sizeActive : ''}`}
+                          onClick={() => setSelectedVariant(v.id)}
+                        >
+                          {v.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+                )}
+
+                <div className={styles.stockRow}>
+                  <span className={product.inStock ? styles.inStock : styles.outStock}>
+                    {product.inStock ? '● em estoque' : '● indisponível no momento'}
+                  </span>
                 </div>
 
-                {/* Size */}
-                <div className={styles.optionGroup}>
-                  <p className={styles.optionLabel}>Tamanho</p>
-                  <div className={styles.optionPills}>
-                    {product.variants.map((v) => (
-                      <button
-                        key={v}
-                        className={`${styles.optionPill} ${selectedSize === v ? styles.sizeActive : ''}`}
-                        onClick={() => setSelectedSize(v)}
-                      >
-                        {v}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Purchase */}
                 <div className={styles.purchaseRow}>
                   <div className={styles.qtyControl}>
                     <button
                       className={styles.qtyBtn}
                       onClick={() => setQty((q) => Math.max(1, q - 1))}
+                      aria-label="Diminuir quantidade"
                     >
                       <Minus size={13} />
                     </button>
@@ -185,18 +205,46 @@ export default function ProductPage({ productId }) {
                     <button
                       className={styles.qtyBtn}
                       onClick={() => setQty((q) => q + 1)}
+                      aria-label="Aumentar quantidade"
                     >
                       <Plus size={13} />
                     </button>
                   </div>
-                  <button className={styles.addToCartBtn}>
-                    adicionar ao carrinho · R$ {totalPrice}
+
+                  <button
+                    className={`${styles.addToCartBtn} ${added ? styles.addToCartDone : ''}`}
+                    onClick={handleAdd}
+                    disabled={!product.inStock}
+                  >
+                    {added ? (
+                      <>
+                        <Check size={15} /> adicionado
+                      </>
+                    ) : (
+                      `adicionar · ${money(unitPrice * qty)}`
+                    )}
                   </button>
                 </div>
 
-                <button className={styles.buyNowBtn} onClick={() => { window.location.href = '/carrinho'; }}>comprar agora →</button>
+                {checkoutUrl && product.inStock && (
+                  <a
+                    className={styles.buyNowBtn}
+                    href={checkoutUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    comprar agora <ExternalLink size={14} />
+                  </a>
+                )}
 
-                {/* Benefits */}
+                <button
+                  className={`${styles.favBtn} ${favorited ? styles.favBtnActive : ''}`}
+                  onClick={() => toggleFavorite(product.id)}
+                >
+                  <Heart size={14} />
+                  {favorited ? 'salvo nos favoritos' : 'salvar nos favoritos'}
+                </button>
+
                 <div className={styles.benefits}>
                   <div className={styles.benefit}>
                     <Package size={13} strokeWidth={2} />
@@ -204,102 +252,50 @@ export default function ProductPage({ productId }) {
                   </div>
                   <div className={styles.benefit}>
                     <Clock size={13} strokeWidth={2} />
-                    <span>Envio em 24h</span>
-                  </div>
-                  <div className={styles.benefit}>
-                    <RefreshCw size={13} strokeWidth={2} />
-                    <span>Troca grátis em 30 dias</span>
+                    <span>Envio em até 24h úteis</span>
                   </div>
                   <div className={styles.benefit}>
                     <ShieldCheck size={13} strokeWidth={2} />
-                    <span>Lacrado · ANVISA</span>
+                    <span>Produto lacrado e original</span>
+                  </div>
+                  <div className={styles.benefit}>
+                    <ShieldCheck size={13} strokeWidth={2} />
+                    <span>Pagamento seguro</span>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── Tabs ── */}
-        <section className={styles.tabsSection}>
-          <div className="container">
-            <div className={styles.tabsBar}>
-              {TABS.map((tab, i) => (
-                <button
-                  key={tab}
-                  className={`${styles.tabBtn} ${activeTab === i ? styles.tabActive : ''}`}
-                  onClick={() => setActiveTab(i)}
-                >
-                  {tab === 'Reviews' ? `Reviews (${product.reviews.toLocaleString('pt-BR')})` : tab}
-                </button>
-              ))}
+        {product.description && (
+          <section className={styles.tabsSection}>
+            <div className="container">
+              <h2 className={styles.descTitle}>descrição</h2>
+              <div className={styles.descBody}>
+                <p>{product.description}</p>
+              </div>
             </div>
+          </section>
+        )}
 
-            <div className={styles.tabBody}>
-              {activeTab === 0 ? (
-                <div className={styles.descGrid}>
-                  <div className={styles.descText}>
-                    <p>{productDescription}</p>
-                  </div>
-                  <div className={styles.highlightsBox}>
-                    <h3 className={styles.highlightsTitle}>destaques</h3>
-                    <ul className={styles.highlightsList}>
-                      {highlights.map((h) => (
-                        <li key={h} className={styles.highlightItem}>
-                          <span className={styles.checkmark}>✓</span>
-                          {h}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ) : (
-                <div className={styles.tabPlaceholder}>
-                  <p>Conteúdo em breve.</p>
-                </div>
-              )}
+        {related.length > 0 && (
+          <section className={styles.relatedSection}>
+            <div className="container">
+              <h2 className={styles.relatedTitle}>
+                você também pode <em className={styles.relatedItalic}>gostar.</em>
+              </h2>
+              <div className={styles.relatedGrid}>
+                {related.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
-
-        {/* ── Combina com ── */}
-        <section className={styles.relatedSection}>
-          <div className="container">
-            <h2 className={styles.relatedTitle}>
-              combina <em className={styles.relatedItalic}>com.</em>
-            </h2>
-            <div className={styles.relatedGrid}>
-              {related.map((p) => (
-                <a key={p.id} href={`/produto/${p.id}`} className={styles.relatedCard}>
-                  <div className={`${styles.relatedImage} ${p.image ? '' : 'img-placeholder'}`}>
-                    {p.image ? (
-                      <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <span>produto</span>
-                    )}
-                  </div>
-                  <div className={styles.relatedMeta}>
-                    <p className={styles.relatedName}>{p.name}</p>
-                    <div className={styles.relatedRow}>
-                      <span className={styles.relatedPrice}>R$ {p.price}</span>
-                      <StarRating rating={p.rating} size={11} />
-                    </div>
-                  </div>
-                  <button
-                    className={styles.relatedAddBtn}
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    + adicionar
-                  </button>
-                </a>
-              ))}
-            </div>
-          </div>
-        </section>
-
+          </section>
+        )}
       </main>
       <Footer />
+      <CartToast />
     </>
   );
 }

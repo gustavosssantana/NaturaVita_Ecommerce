@@ -1,14 +1,13 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
-const STORAGE_KEY = 'naturavita_favorites';
-const INITIAL_IDS = [1, 3, 8, 13, 26, 37, 45, 60];
+const STORAGE_KEY = 'naturavita_favorites_v2';
 
 function loadFavorites() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? new Set(JSON.parse(raw)) : new Set(INITIAL_IDS);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
   } catch {
-    return new Set(INITIAL_IDS);
+    return new Set();
   }
 }
 
@@ -24,20 +23,21 @@ export function FavoritesProvider({ children }) {
       else next.add(id);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
-      } catch {}
+      } catch {
+        // Storage unavailable — favorites stay in memory for this session.
+      }
       return next;
     });
   }, []);
 
   const isFavorite = useCallback((id) => favorites.has(id), [favorites]);
 
-  return (
-    <FavoritesContext.Provider
-      value={{ favorites, toggleFavorite, isFavorite, favoritesCount: favorites.size }}
-    >
-      {children}
-    </FavoritesContext.Provider>
+  const value = useMemo(
+    () => ({ favorites, toggleFavorite, isFavorite, favoritesCount: favorites.size }),
+    [favorites, toggleFavorite, isFavorite]
   );
+
+  return <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>;
 }
 
 export function useFavorites() {

@@ -1,90 +1,95 @@
-import { ArrowRight, Heart } from 'lucide-react';
+import { useState } from 'react';
+import { Heart, Check, Plus } from 'lucide-react';
 import styles from './ProductCard.module.css';
 import { useFavorites } from '../../context/FavoritesContext';
+import { useCart } from '../../context/CartContext';
+import { money, discountPercent } from '../../lib/format';
+import { navigate } from '../../lib/router';
 
-export default function ProductCard({ product, onAdd, variant = 'default' }) {
-  const { name, flavor, doses, price, originalPrice, badge, badgeType, image } = product;
+export default function ProductCard({ product }) {
   const { isFavorite, toggleFavorite } = useFavorites();
-  const favorited = isFavorite(product.id);
+  const { addItem } = useCart();
+  const [added, setAdded] = useState(false);
 
-  const handleHeart = (e) => {
+  if (!product) return null;
+
+  const { id, name, price, originalPrice, brand, image, inStock } = product;
+  const favorited = isFavorite(id);
+  const off = discountPercent(price, originalPrice);
+  const href = `/produto/${id}`;
+
+  function handleHeart(e) {
     e.stopPropagation();
-    toggleFavorite(product.id);
-  };
+    e.preventDefault();
+    toggleFavorite(id);
+  }
 
-  if (variant === 'featured') {
-    return (
-      <div className={styles.featured}>
-        <div className={`${styles.featuredImage} ${image ? '' : 'img-placeholder'}`} style={{ position: 'relative' }}>
-          {image ? (
-            <img src={image} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : (
-            <span>{name} produto</span>
-          )}
-          <button
-            className={`${styles.heartBtn} ${favorited ? styles.heartBtnActive : ''}`}
-            onClick={handleHeart}
-            aria-label={favorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-          >
-            <Heart size={14} />
-          </button>
-        </div>
-        <div className={styles.featuredMeta}>
-          <span className={styles.featuredTag}>
-            {doses ? `${doses}G · ` : ''}{flavor?.toUpperCase()}
-          </span>
-          <h3 className={styles.featuredName}>{name}</h3>
-          <div className={styles.featuredFooter}>
-            <span className={styles.featuredPrice}>R$ {price.toFixed(2).replace('.', ',')}</span>
-            <button className={styles.arrowBtn} onClick={() => onAdd?.(product)}>
-              <ArrowRight size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+  function handleAdd(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!inStock) return;
+    addItem(product, 1);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1400);
   }
 
   return (
-    <div
+    <a
+      href={href}
       className={styles.card}
-      onClick={() => { window.location.href = `/produto/${product.id}`; }}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.button !== 0) return;
+        e.preventDefault();
+        navigate(href);
+      }}
     >
-      {badge && (
-        <span className={`${styles.badge} ${styles[badgeType]}`}>{badge}</span>
-      )}
+      {off && <span className={`${styles.badge} ${styles.discount}`}>-{off}%</span>}
+      {!inStock && <span className={`${styles.badge} ${styles.soldOut}`}>esgotado</span>}
+
       <button
         className={`${styles.heartBtn} ${favorited ? styles.heartBtnActive : ''}`}
         onClick={handleHeart}
         aria-label={favorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+        aria-pressed={favorited}
       >
         <Heart size={14} />
       </button>
-      <div className={`${styles.imageWrapper} ${image ? '' : 'img-placeholder'}`}>
+
+      <div className={styles.imageWrapper}>
         {image ? (
-          <img src={image} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img src={image} alt={name} className={styles.image} loading="lazy" />
         ) : (
-          <span>produto</span>
+          <span className={styles.noImage}>sem foto</span>
         )}
       </div>
+
       <div className={styles.meta}>
-        <span className={styles.tag}>{doses ? `${flavor} · ${doses} doses` : flavor}</span>
+        {brand && <span className={styles.tag}>{brand}</span>}
         <h3 className={styles.name}>{name}</h3>
-        <div className={styles.footer}>
-          <div>
-            {originalPrice && (
-              <span className={styles.originalPrice}>R$ {originalPrice}</span>
-            )}
-            <span className={styles.price}>R$ {price}</span>
-          </div>
-          <button
-            className={styles.arrowBtn}
-            onClick={(e) => { e.stopPropagation(); onAdd?.(product); }}
-          >
-            <ArrowRight size={16} />
-          </button>
+
+        <div className={styles.priceBlock}>
+          {originalPrice && <span className={styles.originalPrice}>{money(originalPrice)}</span>}
+          <span className={styles.price}>{money(price)}</span>
         </div>
+
+        <button
+          className={`${styles.addBtn} ${added ? styles.addBtnDone : ''}`}
+          onClick={handleAdd}
+          disabled={!inStock}
+        >
+          {!inStock ? (
+            'indisponível'
+          ) : added ? (
+            <>
+              <Check size={14} /> no carrinho
+            </>
+          ) : (
+            <>
+              <Plus size={14} /> adicionar
+            </>
+          )}
+        </button>
       </div>
-    </div>
+    </a>
   );
 }

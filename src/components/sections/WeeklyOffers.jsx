@@ -1,45 +1,50 @@
-import { useState } from 'react';
+import { useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCatalog } from '../../data/CatalogContext';
 import ProductCard from '../ui/ProductCard';
 import styles from './WeeklyOffers.module.css';
 
-const VISIBLE = 3;
-
 export default function WeeklyOffers() {
-  const { weeklyOffers } = useCatalog();
-  const [offset, setOffset] = useState(0);
-  const maxOffset = Math.max(0, weeklyOffers.length - VISIBLE);
+  const { weeklyOffers, loading } = useCatalog();
+  const trackRef = useRef(null);
 
-  const prev = () => setOffset((v) => Math.max(0, v - 1));
-  const next = () => setOffset((v) => Math.min(maxOffset, v + 1));
+  function scrollBy(direction) {
+    const el = trackRef.current;
+    if (!el) return;
+    const amount = el.clientWidth * 0.8;
+    el.scrollBy({ left: direction * amount, behavior: 'smooth' });
+  }
+
+  if (!loading && weeklyOffers.length === 0) return null;
 
   return (
     <section className={`section ${styles.section}`}>
       <div className="container">
-        <div className="section-header">
+        <div className={styles.header}>
           <div>
-            <h2 className="section-title">melhores ofertas da semana.</h2>
+            <h2 className={styles.title}>
+              ofertas da <em className={styles.italic}>semana.</em>
+            </h2>
+            <p className={styles.subtitle}>selecionados com desconto enquanto durar o estoque</p>
           </div>
           <div className={styles.navButtons}>
-            <button className={styles.navBtn} onClick={prev} disabled={offset === 0}>
-              <ChevronLeft size={20} />
+            <button className={styles.navBtn} onClick={() => scrollBy(-1)} aria-label="Anterior">
+              <ChevronLeft size={19} />
             </button>
-            <button className={styles.navBtn} onClick={next} disabled={offset >= maxOffset}>
-              <ChevronRight size={20} />
+            <button className={styles.navBtn} onClick={() => scrollBy(1)} aria-label="Próximo">
+              <ChevronRight size={19} />
             </button>
           </div>
         </div>
 
-        <div className={styles.trackWrapper}>
-          <div
-            className={styles.track}
-            style={{ transform: `translateX(calc(-${offset} * (100% / ${VISIBLE} + 8px)))` }}
-          >
-            {weeklyOffers.slice(0, 6).map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+        <div className={styles.track} ref={trackRef}>
+          {loading
+            ? Array.from({ length: 5 }).map((_, i) => <div key={i} className={styles.skeleton} />)
+            : weeklyOffers.map((product) => (
+                <div key={product.id} className={styles.slide}>
+                  <ProductCard product={product} />
+                </div>
+              ))}
         </div>
       </div>
     </section>

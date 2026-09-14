@@ -1,181 +1,230 @@
 import { useState, useMemo } from 'react';
-import { SlidersHorizontal, ChevronDown, LayoutGrid, List, X } from 'lucide-react';
+import { ChevronDown, X, SlidersHorizontal } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import AnnouncementBar from '../components/layout/AnnouncementBar';
 import ProductCard from '../components/ui/ProductCard';
+import CartToast from '../components/ui/CartToast';
+import CatalogError from '../components/ui/CatalogError';
+import Link from '../components/ui/Link';
 import { useCatalog } from '../data/CatalogContext';
 import styles from './CategoryPage.module.css';
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 12;
 
-const lojaMeta = { title: 'Nossa', italic: 'loja.', label: 'Loja', desc: 'Todos os produtos NaturaVita em um só lugar.' };
-
-function metaFor(slug, category) {
-  if (slug === 'loja' || !category) return lojaMeta;
-  return {
-    title: category.name,
-    italic: '',
-    label: category.name,
-    desc: `Confira nossa seleção de ${category.name}.`,
-  };
-}
-
-const filterDefs = [
-  { key: 'preco', label: 'Preço', options: ['Até R$100', 'R$100–200', 'Acima de R$200'] },
+const PRICE_RANGES = [
+  { id: 'ate50', label: 'Até R$50', test: (p) => p <= 50 },
+  { id: '50a100', label: 'R$50 a R$100', test: (p) => p > 50 && p <= 100 },
+  { id: '100a200', label: 'R$100 a R$200', test: (p) => p > 100 && p <= 200 },
+  { id: 'acima200', label: 'Acima de R$200', test: (p) => p > 200 },
 ];
 
-function matchesPrice(price, filter) {
-  if (filter === 'Até R$100') return price <= 100;
-  if (filter === 'R$100–200') return price > 100 && price <= 200;
-  if (filter === 'Acima de R$200') return price > 200;
-  return true;
-}
+const SORTS = [
+  { id: 'relevancia', label: 'Relevância' },
+  { id: 'menor', label: 'Menor preço' },
+  { id: 'maior', label: 'Maior preço' },
+  { id: 'nome', label: 'Nome (A–Z)' },
+  { id: 'desconto', label: 'Maior desconto' },
+];
 
 export default function CategoryPage({ slug }) {
-  const { products, categories, loading } = useCatalog();
-  const [activeFilters, setActiveFilters] = useState({});
+  const { categories, productsIn, loading } = useCatalog();
+
+  const [priceRange, setPriceRange] = useState(null);
+  const [onlyDiscount, setOnlyDiscount] = useState(false);
+  const [onlyInStock, setOnlyInStock] = useState(false);
+  const [sort, setSort] = useState('relevancia');
   const [openDropdown, setOpenDropdown] = useState(null);
-  const [lactoseFree, setLactoseFree] = useState(false);
-  const [view, setView] = useState('grid');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
+  const isAll = slug === 'loja';
   const category = categories.find((c) => c.slug === slug);
-  const meta = metaFor(slug, category);
-
-  const baseProducts = slug === 'loja' ? products : products.filter((p) => p.category === slug);
+  const base = productsIn(slug);
 
   const filtered = useMemo(() => {
-    return baseProducts.filter((p) => {
-      if (activeFilters.preco && !matchesPrice(p.price, activeFilters.preco)) return false;
-      if (lactoseFree && !p.lactoseFree) return false;
+    const range = PRICE_RANGES.find((r) => r.id === priceRange);
+    let list = base.filter((p) => {
+      if (range && !range.test(p.price)) return false;
+      if (onlyDiscount && !p.originalPrice) return false;
+      if (onlyInStock && !p.inStock) return false;
       return true;
     });
-  }, [baseProducts, activeFilters, lactoseFree]);
+
+    list = [...list];
+    if (sort === 'menor') list.sort((a, b) => a.price - b.price);
+    else if (sort === 'maior') list.sort((a, b) => b.price - a.price);
+    else if (sort === 'nome') list.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    else if (sort === 'desconto') {
+      list.sort((a, b) => {
+        const da = a.originalPrice ? 1 - a.price / a.originalPrice : 0;
+        const db = b.originalPrice ? 1 - b.price / b.originalPrice : 0;
+        return db - da;
+      });
+    } else {
+      // Relevance: products with a photo first, then cheaper ones.
+      list.sort((a, b) => {
+        if (!!b.image !== !!a.image) return b.image ? 1 : -1;
+        return a.price - b.price;
+      });
+    }
+    return list;
+  }, [base, priceRange, onlyDiscount, onlyInStock, sort]);
 
   const visible = filtered.slice(0, visibleCount);
   const hasMore = visibleCount < filtered.length;
+  const activeCount = (priceRange ? 1 : 0) + (onlyDiscount ? 1 : 0) + (onlyInStock ? 1 : 0);
 
-  const activeFilterCount = Object.keys(activeFilters).length + (lactoseFree ? 1 : 0);
-
-  function toggleFilter(key, value) {
-    setActiveFilters((prev) => {
-      const next = { ...prev };
-      if (next[key] === value) delete next[key];
-      else next[key] = value;
-      return next;
-    });
-    setOpenDropdown(null);
-    setVisibleCount(PAGE_SIZE);
-  }
-
-  function clearFilter(key) {
-    setActiveFilters((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-    setVisibleCount(PAGE_SIZE);
-  }
+  const title = isAll ? 'Nossa' : category?.name || slug;
+  const italic = isAll ? 'loja.' : '';
 
   function clearAll() {
-    setActiveFilters({});
-    setLactoseFree(false);
+    setPriceRange(null);
+    setOnlyDiscount(false);
+    setOnlyInStock(false);
     setVisibleCount(PAGE_SIZE);
   }
 
   return (
     <>
+      <AnnouncementBar />
       <Header />
       <main>
-        {/* ── Page Hero ── */}
+        <CatalogError />
+
         <div className={styles.pageHero}>
           <div className="container">
             <nav className={styles.breadcrumb}>
-              <a href="/">Início</a>
+              <Link href="/">Início</Link>
               <span className={styles.breadcrumbSep}>/</span>
-              <a href="/loja">Loja</a>
-              {slug !== 'loja' && (
+              {isAll ? (
+                <span className={styles.breadcrumbCurrent}>Loja</span>
+              ) : (
                 <>
+                  <Link href="/loja">Loja</Link>
                   <span className={styles.breadcrumbSep}>/</span>
-                  <span className={styles.breadcrumbCurrent}>{meta.label}</span>
+                  <span className={styles.breadcrumbCurrent}>{title}</span>
                 </>
               )}
             </nav>
 
-            <span className={styles.heroTag}>
-              <span className={styles.heroDot} />
-              {meta.label}
-            </span>
-
             <h1 className={styles.heroTitle}>
-              {meta.title}{' '}
-              <em className={styles.heroItalic}>{meta.italic}</em>
+              {title} {italic && <em className={styles.heroItalic}>{italic}</em>}
             </h1>
 
             <div className={styles.heroMeta}>
-              <p className={styles.heroDesc}>{meta.desc}</p>
-              <span className={styles.heroCount}>{filtered.length} produtos</span>
+              <p className={styles.heroDesc}>
+                {isAll
+                  ? 'Todo o catálogo NaturaVita em um só lugar.'
+                  : `Seleção de ${title} com procedência garantida.`}
+              </p>
+              {!loading && (
+                <span className={styles.heroCount}>
+                  {filtered.length} {filtered.length === 1 ? 'produto' : 'produtos'}
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        {/* ── Sticky Filter Bar ── */}
+        {/* ── Filters ── */}
         <div className={styles.filtersBar}>
           <div className="container">
             <div className={styles.filterRow}>
               <div className={styles.filterPills}>
-                {filterDefs.map((fd) => (
-                  <div
-                    key={fd.key}
-                    className={styles.dropdownWrap}
-                    onMouseLeave={() => setOpenDropdown(null)}
+                <div className={styles.dropdownWrap}>
+                  <button
+                    className={`${styles.filterPill} ${priceRange ? styles.pillActive : ''}`}
+                    onClick={() => setOpenDropdown(openDropdown === 'preco' ? null : 'preco')}
                   >
-                    <button
-                      className={`${styles.filterPill} ${activeFilters[fd.key] ? styles.pillActive : ''}`}
-                      onClick={() => setOpenDropdown(openDropdown === fd.key ? null : fd.key)}
-                    >
-                      {activeFilters[fd.key] ? activeFilters[fd.key] : fd.label}
-                      {activeFilters[fd.key]
-                        ? <X size={12} onClick={(e) => { e.stopPropagation(); clearFilter(fd.key); }} />
-                        : <ChevronDown size={12} />
-                      }
-                    </button>
-                    {openDropdown === fd.key && (
-                      <div className={styles.dropdown}>
-                        {fd.options.map((opt) => (
-                          <button
-                            key={opt}
-                            className={`${styles.dropdownItem} ${activeFilters[fd.key] === opt ? styles.dropdownItemActive : ''}`}
-                            onClick={() => toggleFilter(fd.key, opt)}
-                          >
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
+                    {priceRange ? PRICE_RANGES.find((r) => r.id === priceRange)?.label : 'Preço'}
+                    {priceRange ? (
+                      <X
+                        size={12}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPriceRange(null);
+                          setVisibleCount(PAGE_SIZE);
+                        }}
+                      />
+                    ) : (
+                      <ChevronDown size={12} />
                     )}
-                  </div>
-                ))}
+                  </button>
+
+                  {openDropdown === 'preco' && (
+                    <div className={styles.dropdown}>
+                      {PRICE_RANGES.map((r) => (
+                        <button
+                          key={r.id}
+                          className={`${styles.dropdownItem} ${priceRange === r.id ? styles.dropdownItemActive : ''}`}
+                          onClick={() => {
+                            setPriceRange(priceRange === r.id ? null : r.id);
+                            setOpenDropdown(null);
+                            setVisibleCount(PAGE_SIZE);
+                          }}
+                        >
+                          {r.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 <button
-                  className={`${styles.filterPill} ${styles.togglePill} ${lactoseFree ? styles.pillActive : ''}`}
-                  onClick={() => { setLactoseFree((v) => !v); setVisibleCount(PAGE_SIZE); }}
+                  className={`${styles.filterPill} ${onlyDiscount ? styles.pillActive : ''}`}
+                  onClick={() => {
+                    setOnlyDiscount((v) => !v);
+                    setVisibleCount(PAGE_SIZE);
+                  }}
                 >
-                  Sem lactose
-                  {lactoseFree && <X size={12} />}
+                  Em promoção
+                  {onlyDiscount && <X size={12} />}
                 </button>
-              </div>
 
-              <div className={styles.filterRight}>
-                {activeFilterCount > 0 && (
+                <button
+                  className={`${styles.filterPill} ${onlyInStock ? styles.pillActive : ''}`}
+                  onClick={() => {
+                    setOnlyInStock((v) => !v);
+                    setVisibleCount(PAGE_SIZE);
+                  }}
+                >
+                  Disponível
+                  {onlyInStock && <X size={12} />}
+                </button>
+
+                {activeCount > 0 && (
                   <button className={styles.clearBtn} onClick={clearAll}>
-                    limpar ({activeFilterCount})
+                    limpar ({activeCount})
                   </button>
                 )}
-                <button className={styles.allFiltersBtn}>
-                  <SlidersHorizontal size={14} />
-                  Filtros
-                  {activeFilterCount > 0 && <span className={styles.filterBadge}>{activeFilterCount}</span>}
+              </div>
+
+              <div className={styles.dropdownWrap}>
+                <button
+                  className={styles.sortBtn}
+                  onClick={() => setOpenDropdown(openDropdown === 'sort' ? null : 'sort')}
+                >
+                  <SlidersHorizontal size={13} />
+                  {SORTS.find((s) => s.id === sort)?.label}
+                  <ChevronDown size={12} />
                 </button>
+
+                {openDropdown === 'sort' && (
+                  <div className={`${styles.dropdown} ${styles.dropdownRight}`}>
+                    {SORTS.map((s) => (
+                      <button
+                        key={s.id}
+                        className={`${styles.dropdownItem} ${sort === s.id ? styles.dropdownItemActive : ''}`}
+                        onClick={() => {
+                          setSort(s.id);
+                          setOpenDropdown(null);
+                        }}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -184,46 +233,33 @@ export default function CategoryPage({ slug }) {
         {/* ── Listing ── */}
         <section className={styles.listing}>
           <div className="container">
-            <div className={styles.resultsBar}>
-              <p className={styles.resultsCount}>
-                <strong>{filtered.length}</strong> produtos encontrados
-              </p>
-              <div className={styles.resultsControls}>
-                <div className={styles.viewToggle}>
-                  <button
-                    className={`${styles.viewBtn} ${view === 'grid' ? styles.viewBtnActive : ''}`}
-                    onClick={() => setView('grid')}
-                    aria-label="Grade"
-                  >
-                    <LayoutGrid size={15} />
-                  </button>
-                  <button
-                    className={`${styles.viewBtn} ${view === 'list' ? styles.viewBtnActive : ''}`}
-                    onClick={() => setView('list')}
-                    aria-label="Lista"
-                  >
-                    <List size={15} />
-                  </button>
-                </div>
-                <button className={styles.sortBtn}>
-                  ordenar
-                  <ChevronDown size={13} />
-                </button>
-              </div>
-            </div>
-
-            {loading && products.length === 0 ? (
-              <div className={styles.empty}>
-                <p>Carregando produtos…</p>
+            {loading ? (
+              <div className={styles.grid}>
+                {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+                  <div key={i} className={styles.skeleton} />
+                ))}
               </div>
             ) : filtered.length === 0 ? (
               <div className={styles.empty}>
-                <p>Nenhum produto encontrado com os filtros selecionados.</p>
-                <button className={styles.clearBtn} onClick={clearAll}>Limpar filtros</button>
+                <p className={styles.emptyTitle}>Nenhum produto encontrado</p>
+                <p className={styles.emptyText}>
+                  {activeCount > 0
+                    ? 'Tente remover alguns filtros para ver mais opções.'
+                    : 'Esta categoria ainda não tem produtos publicados.'}
+                </p>
+                {activeCount > 0 ? (
+                  <button className={styles.emptyBtn} onClick={clearAll}>
+                    Limpar filtros
+                  </button>
+                ) : (
+                  <Link href="/loja" className={styles.emptyBtn}>
+                    Ver todos os produtos
+                  </Link>
+                )}
               </div>
             ) : (
               <>
-                <div className={`${styles.grid} ${view === 'list' ? styles.gridList : ''}`}>
+                <div className={styles.grid}>
                   {visible.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
@@ -235,7 +271,7 @@ export default function CategoryPage({ slug }) {
                       className={styles.loadMoreBtn}
                       onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
                     >
-                      carregar mais ({visibleCount} de {filtered.length})
+                      carregar mais ({visible.length} de {filtered.length})
                     </button>
                   </div>
                 )}
@@ -245,6 +281,7 @@ export default function CategoryPage({ slug }) {
         </section>
       </main>
       <Footer />
+      <CartToast />
     </>
   );
 }
