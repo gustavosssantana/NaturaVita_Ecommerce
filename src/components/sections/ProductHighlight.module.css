@@ -1,0 +1,282 @@
+/* ── Section wrapper ── */
+.section {
+  background: var(--color-green-deep);
+  padding: var(--section-pad);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Radial orb — bloom no lado esquerdo desta vez */
+.orb {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 50% 90% at 18% 55%, rgba(78, 122, 64, 0.28) 0%, transparent 65%),
+    radial-gradient(ellipse 25% 40% at 90% 20%, rgba(43, 59, 39, 0.5) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Decorative leaves */
+.leaf1 {
+  position: absolute;
+  width: 160px;
+  height: 256px;
+  top: -30px;
+  left: 28%;
+  color: rgba(255, 255, 255, 0.038);
+  transform: rotate(18deg);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.leaf2 {
+  position: absolute;
+  width: 100px;
+  height: 160px;
+  bottom: -20px;
+  right: 42%;
+  color: rgba(255, 255, 255, 0.025);
+  transform: rotate(-30deg);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Layout ── */
+.inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+}
+
+/* ══════════════════════════════
+   Left — copy
+══════════════════════════════ */
+.copy {
+  color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Label with pulsing dot */
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.7rem;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-green-sage);
+  align-self: flex-start;
+}
+
+.labelPulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-green-light);
+  flex-shrink: 0;
+  animation: pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(111, 160, 96, 0.55); }
+  60%  { box-shadow: 0 0 0 7px rgba(111, 160, 96, 0);    }
+  100% { box-shadow: 0 0 0 0   rgba(111, 160, 96, 0);    }
+}
+
+.headline {
+  font-size: clamp(2.2rem, 4.5vw, 3.2rem);
+  font-weight: var(--fw-bold);
+  line-height: 1.06;
+  letter-spacing: -0.028em;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.headline em {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: var(--fw-semibold);
+  color: var(--color-green-sage);
+  font-size: 1.1em;
+}
+
+.desc {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.65;
+  max-width: 300px;
+}
+
+/* ══════════════════════════════
+   Right — product card
+══════════════════════════════ */
+.productCard {
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  padding: 22px 22px 18px;
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.06) inset,
+    0 28px 72px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.badgeRow { margin-bottom: 14px; }
+
+.discountBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(200, 83, 26, 0.1);
+  color: var(--color-orange);
+  font-size: 0.72rem;
+  font-weight: var(--fw-bold);
+  padding: 5px 11px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.04em;
+}
+
+.cardInner {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.productImage {
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  background: var(--color-cream);
+}
+
+.productInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ratingText {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.productName {
+  font-size: 1.0625rem;
+  font-weight: var(--fw-bold);
+  color: var(--color-green-deep);
+  line-height: 1.2;
+}
+
+.variants { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.variantBtn {
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: var(--fw-medium);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-white);
+  color: var(--color-text-mid);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.variantBtn:hover { border-color: var(--color-green-mid); }
+
+.variantActive {
+  border-color: var(--color-green-deep);
+  background: var(--color-green-deep);
+  color: var(--color-white);
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.price {
+  font-size: 1.5rem;
+  font-weight: var(--fw-bold);
+  color: var(--color-green-deep);
+}
+
+.originalPrice {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--color-orange);
+  color: var(--color-white);
+  font-size: 0.875rem;
+  font-weight: var(--fw-semibold);
+  padding: 12px 20px;
+  border-radius: var(--radius-full);
+  width: 100%;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.12s, box-shadow 0.18s;
+}
+
+.addBtn:hover {
+  background: var(--color-orange-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(200, 83, 26, 0.32);
+}
+
+/* Dots */
+.dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  padding-top: 16px;
+}
+
+.dot {
+  height: 6px;
+  width: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, width 0.2s;
+}
+
+.dotActive {
+  width: 20px;
+  background: var(--color-green-deep);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .inner { grid-template-columns: 1fr; gap: 32px; }
+  .desc { max-width: 100%; }
+  .leaf1, .leaf2 { display: none; }
+}
+
+@media (max-width: 600px) {
+  .cardInner { grid-template-columns: 1fr; }
+  .productImage { max-width: 200px; margin: 0 auto; }
+}

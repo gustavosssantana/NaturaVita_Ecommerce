@@ -1,0 +1,208 @@
+/* ── Default card (BestSellers grid) ── */
+.card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  font-size: 0.68rem;
+  font-weight: var(--fw-bold);
+  padding: 4px 9px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Heart / Favorite button ── */
+.heartBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.13);
+  transition: color 0.15s, transform 0.15s, background 0.15s;
+}
+
+.heartBtn:hover {
+  transform: scale(1.12);
+  color: #d94f6a;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.heartBtnActive {
+  color: #d94f6a;
+}
+
+.heartBtnActive svg {
+  fill: #d94f6a;
+}
+
+.discount { background: var(--color-orange); color: var(--color-white); }
+.new      { background: var(--color-green-mid); color: var(--color-white); }
+
+.imageWrapper {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 0;
+  background: var(--color-cream);
+  background-image: repeating-linear-gradient(
+    45deg, transparent, transparent 12px,
+    rgba(43,59,39,0.04) 12px, rgba(43,59,39,0.04) 24px
+  );
+}
+
+.meta { padding: 14px 16px 16px; }
+
+.tag {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 5px;
+}
+
+.name {
+  font-size: 1rem;
+  font-weight: var(--fw-bold);
+  color: var(--color-green-deep);
+  line-height: 1.25;
+  margin-bottom: 12px;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.originalPrice {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.price {
+  font-size: 1.125rem;
+  font-weight: var(--fw-bold);
+  color: var(--color-green-deep);
+}
+
+/* Arrow button (shared) */
+.arrowBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-green-deep);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.12s;
+  flex-shrink: 0;
+}
+
+.arrowBtn:hover {
+  background: var(--color-green-mid);
+  transform: scale(1.08);
+}
+
+@media (max-width: 480px) {
+  .meta { padding: 10px 12px 12px; }
+  .name { font-size: 0.88rem; margin-bottom: 9px; }
+  .price { font-size: 1rem; }
+  .arrowBtn { width: 30px; height: 30px; }
+}
+
+/* ── Featured card variant (dark section) ── */
+.featured {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.featured:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.featuredImage {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #D8E4D4;
+  background-image: repeating-linear-gradient(
+    45deg, transparent, transparent 14px,
+    rgba(43,59,39,0.05) 14px, rgba(43,59,39,0.05) 28px
+  );
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(43, 59, 39, 0.35);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 12px;
+}
+
+.featuredMeta {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.featuredTag {
+  font-size: 0.72rem;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.featuredName {
+  font-size: 1.0625rem;
+  font-weight: var(--fw-bold);
+  color: var(--color-green-deep);
+  line-height: 1.25;
+}
+
+.featuredFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.featuredPrice {
+  font-size: 1.125rem;
+  font-weight: var(--fw-bold);
+  color: var(--color-green-deep);
+}

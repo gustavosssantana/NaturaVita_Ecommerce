@@ -1,0 +1,229 @@
+.page {
+  min-height: 100vh;
+  background: var(--color-cream);
+  padding-bottom: 80px;
+}
+
+/* ── Page Header ── */
+.pageHeader {
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  padding: 44px 0 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pageHeader::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(217, 79, 106, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.pageHeaderInner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.pageHeaderText {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pageLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: var(--fw-semibold);
+  color: #d94f6a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.pageTitle {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: var(--fw-bold);
+  color: var(--color-green-deep);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.pageTitle em {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--color-green-accent);
+  font-weight: var(--fw-regular);
+}
+
+.pageSubtitle {
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.pageHeaderDeco {
+  color: rgba(217, 79, 106, 0.12);
+  flex-shrink: 0;
+}
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 0 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbarCount {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.toolbarCount strong {
+  color: var(--color-text);
+  font-weight: var(--fw-semibold);
+}
+
+.sortWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sortLabel {
+  font-size: 0.78rem;
+  font-weight: var(--fw-medium);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.sortSelect {
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-white);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.sortSelect:focus {
+  border-color: var(--color-green-accent);
+}
+
+/* ── Product Grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+/* ── Continue Shopping ── */
+.continueShopping {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 0 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  flex-wrap: wrap;
+}
+
+.continueBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: var(--fw-semibold);
+  color: var(--color-green-accent);
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 1px;
+  transition: color 0.15s;
+}
+
+.continueBtn:hover {
+  color: var(--color-green-deep);
+}
+
+/* ── Empty State ── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 80px 20px;
+  gap: 16px;
+}
+
+.emptyIcon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(217, 79, 106, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d94f6a;
+  margin-bottom: 8px;
+}
+
+.emptyTitle {
+  font-size: 1.4rem;
+  font-weight: var(--fw-bold);
+  color: var(--color-green-deep);
+  letter-spacing: -0.02em;
+}
+
+.emptyText {
+  font-size: 0.925rem;
+  color: var(--color-text-muted);
+  max-width: 340px;
+  line-height: 1.65;
+}
+
+.emptyBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 11px 26px;
+  background: var(--color-green-deep);
+  color: white;
+  font-weight: var(--fw-semibold);
+  font-size: 0.875rem;
+  border-radius: var(--radius-full);
+  transition: background 0.15s, transform 0.12s;
+}
+
+.emptyBtn:hover {
+  background: var(--color-green-mid);
+  transform: scale(1.02);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 700px) {
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .pageHeader { padding: 32px 0 28px; }
+  .pageHeaderDeco { display: none; }
+}
+
+@media (max-width: 420px) {
+  .grid { grid-template-columns: repeat(1, 1fr); }
+}

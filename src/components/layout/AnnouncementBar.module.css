@@ -1,0 +1,64 @@
+.bar {
+  position: relative;
+  background: var(--color-green-deep);
+  overflow: hidden;
+  height: 34px;
+  display: flex;
+  align-items: center;
+}
+
+/* Edge fades */
+.fadeLeft,
+.fadeRight {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.fadeLeft {
+  left: 0;
+  background: linear-gradient(to right, var(--color-green-deep), transparent);
+}
+
+.fadeRight {
+  right: 0;
+  background: linear-gradient(to left, var(--color-green-deep), transparent);
+}
+
+/* Scrolling track */
+.track {
+  display: flex;
+  gap: 0;
+  white-space: nowrap;
+  animation: marquee 28s linear infinite;
+  will-change: transform;
+}
+
+.track:hover { animation-play-state: paused; }
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Individual message */
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 40px;
+  font-size: 0.72rem;
+  font-weight: var(--fw-medium);
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.dot {
+  font-size: 0.5rem;
+  color: var(--color-green-light);
+  opacity: 0.8;
+}

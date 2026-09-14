@@ -1,0 +1,32 @@
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.filled {
+  fill: var(--color-green-accent);
+  color: var(--color-green-accent);
+}
+
+.empty {
+  fill: var(--color-green-sage);
+  color: var(--color-green-sage);
+}
+
+.partial {
+  fill: url(#partial-gradient);
+  color: #D8D2C6;
+}
+
+.partialWrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.value {
+  margin-left: 4px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-mid);
+}
