@@ -203,8 +203,10 @@ export default async function handler(req, res) {
         seen.add(p.id);
         return !isTestEntry(txt(p.name));
       })
+      // A product without a category still belongs in /loja — only priceless
+      // entries (drafts) are dropped.
       .map((p) => mapProduct(p, slugById, storeUrl))
-      .filter((p) => p.price > 0 && p.category);
+      .filter((p) => p.price > 0);
 
     // Category metadata: product count + a representative photo.
     const countByCategory = {};

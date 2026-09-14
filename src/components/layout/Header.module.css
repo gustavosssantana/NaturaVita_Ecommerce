@@ -343,16 +343,20 @@
 /* ══════════════════════════════
    Mobile panel
 ══════════════════════════════ */
+/* Anchored to the header itself (not the viewport) so it lines up whether or
+   not the announcement bar is still on screen. */
 .mobilePanel {
   display: block;
-  position: fixed;
-  top: 72px;
+  position: absolute;
+  top: 100%;
   left: 0;
   right: 0;
-  bottom: 0;
+  height: calc(100vh - 72px);
   background: var(--color-cream);
+  border-top: 1px solid var(--color-border);
   z-index: 99;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 16px 20px 40px;
   animation: dropIn 0.18s ease;
 }
@@ -485,5 +489,5 @@
   .logoText { font-size: 1rem; }
   .cartPill { height: 34px; }
   .searchWrap { display: none; }
-  .mobilePanel { top: 60px; }
+  .mobilePanel { height: calc(100vh - 60px); }
 }
