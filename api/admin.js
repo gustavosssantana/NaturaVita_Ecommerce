@@ -69,6 +69,31 @@ function mapear(p) {
   };
 }
 
+// A API devolve produto despublicado mesmo com ?published=true — já nos
+// enganou duas vezes. Então buscamos tudo e filtramos aqui, com um cache
+// curto para o painel não refazer 6 requisições a cada clique.
+let cacheProdutos = null;
+let cacheEm = 0;
+const CACHE_MS = 60 * 1000;
+
+async function todosOsProdutos({ forcar = false } = {}) {
+  if (!forcar && cacheProdutos && Date.now() - cacheEm < CACHE_MS) return cacheProdutos;
+  const tudo = [];
+  for (let pagina = 1; pagina <= 20; pagina++) {
+    const lote = await nuvem(`/products?per_page=200&page=${pagina}`);
+    if (!lote || !lote.length) break;
+    tudo.push(...lote);
+    if (lote.length < 200) break;
+  }
+  cacheProdutos = tudo;
+  cacheEm = Date.now();
+  return tudo;
+}
+
+function invalidarCache() {
+  cacheProdutos = null;
+}
+
 async function nuvem(caminho, opcoes = {}) {
   const r = await fetch(`${API()}${caminho}`, { ...opcoes, headers: headers() });
   const corpo = await r.text();
@@ -126,11 +151,57 @@ export default async function handler(req, res) {
       }
 
       case 'listar': {
-        const busca = limpar(corpo.busca, 60);
-        const pagina = Math.max(1, Math.min(50, Number(corpo.pagina) || 1));
-        const q = busca ? `&q=${encodeURIComponent(busca)}` : '';
-        const lista = await nuvem(`/products?per_page=30&page=${pagina}${q}`);
-        return res.status(200).json({ produtos: lista.map(mapear), pagina });
+        const busca = limpar(corpo.busca, 60).toLowerCase();
+        const filtro = ['todos', 'loja', 'ocultos'].includes(corpo.filtro) ? corpo.filtro : 'todos';
+        const pagina = Math.max(1, Number(corpo.pagina) || 1);
+        const porPagina = 30;
+
+        let lista = (await todosOsProdutos()).map(mapear);
+
+        const totais = {
+          todos: lista.length,
+          loja: lista.filter((p) => p.publicado).length,
+          ocultos: lista.filter((p) => !p.publicado).length,
+          ocultosComEstoque: lista.filter((p) => !p.publicado && (p.estoque ?? 0) > 0).length,
+        };
+
+        if (filtro === 'loja') lista = lista.filter((p) => p.publicado);
+        if (filtro === 'ocultos') lista = lista.filter((p) => !p.publicado);
+
+        if (busca) {
+          lista = lista.filter(
+            (p) =>
+              p.nome.toLowerCase().includes(busca) ||
+              (p.sku || '').toLowerCase().includes(busca)
+          );
+        }
+
+        // Nos ocultos, quem tem estoque vem primeiro: é o produto que o lojista
+        // tem na prateleira e não está vendendo. É por onde ele deve começar.
+        if (filtro === 'ocultos') {
+          lista.sort((a, b) => (b.estoque ?? 0) - (a.estoque ?? 0));
+        }
+
+        const total = lista.length;
+        const inicio = (pagina - 1) * porPagina;
+        return res.status(200).json({
+          produtos: lista.slice(inicio, inicio + porPagina),
+          pagina,
+          total,
+          temMais: inicio + porPagina < total,
+          totais,
+        });
+      }
+
+      case 'publicacao': {
+        const id = Number(corpo.id);
+        if (!id) return res.status(400).json({ erro: 'Produto não informado.' });
+        await nuvem(`/products/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ published: !!corpo.publicado }),
+        });
+        invalidarCache();
+        return res.status(200).json({ ok: true, publicado: !!corpo.publicado });
       }
 
       case 'produto': {
@@ -178,6 +249,7 @@ export default async function handler(req, res) {
           await subirFoto(id, corpo.foto, corpo.fotoNome, corpo.removerFotosAntigas);
         }
 
+        invalidarCache();
         const atualizado = await nuvem(`/products/${id}`);
         return res.status(200).json({ produto: mapear(atualizado) });
       }
@@ -223,6 +295,7 @@ export default async function handler(req, res) {
           }
         }
 
+        invalidarCache();
         const completo = await nuvem(`/products/${criado.id}`);
         return res.status(200).json({ produto: mapear(completo) });
       }

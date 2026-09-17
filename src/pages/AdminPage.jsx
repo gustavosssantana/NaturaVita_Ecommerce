@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Lock, Search, Plus, ArrowLeft, Camera, Loader2, Check, AlertCircle, Eye, EyeOff,
+  Package,
 } from 'lucide-react';
 import { money } from '../lib/format';
 import styles from './AdminPage.module.css';
@@ -26,6 +27,9 @@ export default function AdminPage() {
 
   const [produtos, setProdutos] = useState([]);
   const [busca, setBusca] = useState('');
+  const [filtro, setFiltro] = useState('todos');
+  const [totais, setTotais] = useState(null);
+  const [alternando, setAlternando] = useState(null);
   const [categorias, setCategorias] = useState([]);
   const [editando, setEditando] = useState(null); // produto | 'novo' | null
   const [form, setForm] = useState(VAZIO);
@@ -64,12 +68,13 @@ export default function AdminPage() {
   }, []);
 
   const carregar = useCallback(
-    async (termo = '') => {
+    async (termo = '', qual = 'todos') => {
       setOcupado(true);
       setErro(null);
       try {
-        const { produtos: lista } = await chamar('listar', { busca: termo });
-        setProdutos(lista);
+        const r = await chamar('listar', { busca: termo, filtro: qual });
+        setProdutos(r.produtos);
+        if (r.totais) setTotais(r.totais);
       } catch (e) {
         setErro(e.message);
       } finally {
@@ -79,9 +84,32 @@ export default function AdminPage() {
     [chamar]
   );
 
+  // Publicar/ocultar sem sair da lista: é a operação que o lojista mais repete.
+  async function alternarPublicacao(p) {
+    setAlternando(p.id);
+    setErro(null);
+    try {
+      await chamar('publicacao', { id: p.id, publicado: !p.publicado });
+      setProdutos((atual) =>
+        atual.map((x) => (x.id === p.id ? { ...x, publicado: !p.publicado } : x))
+      );
+      setTotais((t) =>
+        !t ? t : {
+          ...t,
+          loja: t.loja + (p.publicado ? -1 : 1),
+          ocultos: t.ocultos + (p.publicado ? 1 : -1),
+        }
+      );
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setAlternando(null);
+    }
+  }
+
   useEffect(() => {
     if (!dentro) return;
-    carregar('');
+    carregar('', 'todos');
     chamar('categorias').then((r) => setCategorias(r.categorias || [])).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dentro]);
@@ -154,7 +182,7 @@ export default function AdminPage() {
       if (resposta.aviso) setAviso(resposta.aviso);
       else setAviso(editando === 'novo' ? 'Produto criado.' : 'Alterações salvas.');
       setEditando(null);
-      await carregar(busca);
+      await carregar(busca, filtro);
     } catch (err) {
       setErro(err.message);
     } finally {
@@ -334,9 +362,35 @@ export default function AdminPage() {
         {aviso && <p className={styles.ok}><Check size={14} /> {aviso}</p>}
         {erro && <p className={styles.erro}><AlertCircle size={14} /> {erro}</p>}
 
+        <div className={styles.abas}>
+          {[
+            ['todos', 'Todos', totais?.todos],
+            ['loja', 'Na loja', totais?.loja],
+            ['ocultos', 'Ocultos', totais?.ocultos],
+          ].map(([id, rotulo, n]) => (
+            <button
+              key={id} type="button"
+              className={`${styles.aba} ${filtro === id ? styles.abaOn : ''}`}
+              onClick={() => { setFiltro(id); carregar(busca, id); }}
+            >
+              {rotulo}{n !== undefined && <span className={styles.abaNum}>{n}</span>}
+            </button>
+          ))}
+        </div>
+
+        {filtro === 'ocultos' && totais?.ocultosComEstoque > 0 && (
+          <p className={styles.destaque}>
+            <Package size={14} />
+            <span>
+              <strong>{totais.ocultosComEstoque}</strong> destes têm estoque — são produtos
+              na prateleira que não estão à venda. Aparecem primeiro na lista.
+            </span>
+          </p>
+        )}
+
         <form
           className={styles.buscaBox}
-          onSubmit={(ev) => { ev.preventDefault(); carregar(busca); }}
+          onSubmit={(ev) => { ev.preventDefault(); carregar(busca, filtro); }}
         >
           <Search size={15} />
           <input
@@ -362,10 +416,31 @@ export default function AdminPage() {
                   {p.sku && ` · ${p.sku}`}
                 </p>
               </div>
-              <span className={p.publicado ? styles.tagOn : styles.tagOff}>
-                {p.publicado ? <Eye size={12} /> : <EyeOff size={12} />}
-                {p.publicado ? 'na loja' : 'oculto'}
-              </span>
+              {/* Os dois selos ficam num invólucro só: o de estoque é
+                  condicional, e sem isso a linha teria ora 4 ora 5 colunas. */}
+              <div className={styles.itemTags}>
+                {p.estoque !== null && p.estoque > 0 && !p.publicado && (
+                  <span className={styles.tagEstoque}>
+                    <Package size={11} /> {p.estoque} na prateleira
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className={p.publicado ? styles.tagOn : styles.tagOff}
+                  onClick={() => alternarPublicacao(p)}
+                  disabled={alternando === p.id}
+                  title={p.publicado ? 'Ocultar da loja' : 'Mostrar na loja'}
+                >
+                  {alternando === p.id ? (
+                    <Loader2 size={12} className={styles.girando} />
+                  ) : p.publicado ? (
+                    <Eye size={12} />
+                  ) : (
+                    <EyeOff size={12} />
+                  )}
+                  {p.publicado ? 'na loja' : 'oculto'}
+                </button>
+              </div>
               <button className={styles.btnSecundario} onClick={() => abrir(p)} type="button">
                 editar
               </button>
