@@ -1,13 +1,15 @@
 // Vercel Serverless Function — proxies the Nuvemshop (Tiendanube) Admin API
 // server-side, so the access token never reaches the browser.
 //
-// Prefer setting these as real Environment Variables in Vercel → Project →
-// Settings → Environment Variables (they'll override the fallbacks below):
-//   NUVEMSHOP_STORE_ID
-//   NUVEMSHOP_ACCESS_TOKEN
-//   NUVEMSHOP_USER_AGENT
+// The access token is read ONLY from the environment. It is never written in
+// this file: the repository is public, and a token committed here is a key
+// left in the street — anyone who finds the repo can rewrite the store.
+//
+// Set it in Vercel → Project → Settings → Environment Variables:
+//   NUVEMSHOP_ACCESS_TOKEN   (required)
+//   NUVEMSHOP_STORE_ID       (optional, defaults below)
+//   NUVEMSHOP_USER_AGENT     (optional, defaults below)
 const FALLBACK_STORE_ID = '8240607';
-const FALLBACK_ACCESS_TOKEN = '39f51aed529c346ae9a36f7b7c3c3fbfc3126264';
 const FALLBACK_USER_AGENT = 'NaturaVitaImport (naturavita.loja@gmail.com)';
 
 const API_VERSION = 'v1';
@@ -16,9 +18,21 @@ function baseUrl(storeId) {
   return `https://api.tiendanube.com/${API_VERSION}/${storeId}`;
 }
 
+function accessToken() {
+  const token = process.env.NUVEMSHOP_ACCESS_TOKEN;
+  if (!token) {
+    // Failing loudly beats falling back to a token in the source: a silent
+    // fallback is how the old one ended up published in a public repo.
+    throw new Error(
+      'NUVEMSHOP_ACCESS_TOKEN is not set. Add it in Vercel → Project → Settings → Environment Variables.'
+    );
+  }
+  return token;
+}
+
 function headers() {
   return {
-    Authentication: `bearer ${process.env.NUVEMSHOP_ACCESS_TOKEN || FALLBACK_ACCESS_TOKEN}`,
+    Authentication: `bearer ${accessToken()}`,
     'User-Agent': process.env.NUVEMSHOP_USER_AGENT || FALLBACK_USER_AGENT,
     'Content-Type': 'application/json',
   };
