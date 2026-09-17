@@ -301,6 +301,21 @@ export default function ProductPage({ productId }) {
       </main>
       <Footer />
       <CartToast />
+
+      {/* Os tres dados que a Nuvemshop exige para montar o pedido. */}
+      <BuyModal
+        aberto={comprando}
+        aoFechar={() => setComprando(false)}
+        total={unitPrice * qty}
+        itens={[
+          {
+            variantId: variant?.id,
+            quantity: qty,
+            nome: product.name,
+            subtotal: unitPrice * qty,
+          },
+        ]}
+      />
     </>
   );
 }
