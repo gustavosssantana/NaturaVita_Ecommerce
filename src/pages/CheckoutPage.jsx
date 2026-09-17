@@ -8,7 +8,6 @@ import { useCartItems } from '../context/CartContext';
 import { money, buyUrl, deliveryEstimate } from '../lib/format';
 import styles from './CheckoutPage.module.css';
 
-const FRETE_THRESHOLD = 199;
 const STEPS = ['carrinho', 'entrega', 'pagamento'];
 
 function onlyDigits(v) {
@@ -265,9 +264,7 @@ export default function CheckoutPage() {
                   <span className={styles.totalValue}>{money(subtotal)}</span>
                 </div>
                 <p className={styles.installments}>
-                  {subtotal >= FRETE_THRESHOLD
-                    ? 'acima de R$199 — confira o frete grátis na loja'
-                    : 'frete calculado na loja pelo seu CEP'}
+                  {'frete calculado na loja pelo seu CEP'}
                 </p>
 
                 <p className={styles.secureNote}>

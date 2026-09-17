@@ -1,12 +1,20 @@
 import { useState } from 'react';
-import { Heart, Check, Plus } from 'lucide-react';
+import { Heart, Check, ShoppingCart } from 'lucide-react';
 import styles from './ProductCard.module.css';
 import { useFavorites } from '../../context/FavoritesContext';
 import { useCart } from '../../context/CartContext';
-import { money, discountPercent } from '../../lib/format';
+import { money, installment, discountPercent } from '../../lib/format';
 import { navigate } from '../../lib/router';
 
-export default function ProductCard({ product }) {
+/**
+ * Cartão de produto no formato de marketplace: foto quadrada, preço grande,
+ * parcelamento logo abaixo e uma ação só — adicionar ao carrinho.
+ *
+ * A altura é igual em todos os cartões (grid interno com linhas fixas), para
+ * que os botões de uma fileira fiquem alinhados mesmo com nomes de tamanhos
+ * diferentes.
+ */
+export default function ProductCard({ product, compacto = false }) {
   const { isFavorite, toggleFavorite } = useFavorites();
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
@@ -30,50 +38,51 @@ export default function ProductCard({ product }) {
     if (!inStock) return;
     addItem(product, 1);
     setAdded(true);
-    setTimeout(() => setAdded(false), 1400);
+    setTimeout(() => setAdded(false), 1500);
   }
 
   return (
     <a
       href={href}
-      className={styles.card}
+      className={`${styles.card} ${compacto ? styles.compacto : ''}`}
       onClick={(e) => {
         if (e.metaKey || e.ctrlKey || e.button !== 0) return;
         e.preventDefault();
         navigate(href);
       }}
     >
-      {off && <span className={`${styles.badge} ${styles.discount}`}>-{off}%</span>}
-      {!inStock && <span className={`${styles.badge} ${styles.soldOut}`}>esgotado</span>}
-
-      <button
-        className={`${styles.heartBtn} ${favorited ? styles.heartBtnActive : ''}`}
-        onClick={handleHeart}
-        aria-label={favorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-        aria-pressed={favorited}
-      >
-        <Heart size={14} />
-      </button>
-
-      <div className={styles.imageWrapper}>
+      <div className={styles.media}>
         {image ? (
           <img src={image} alt={name} className={styles.image} loading="lazy" />
         ) : (
           <span className={styles.noImage}>sem foto</span>
         )}
+
+        {off ? <span className={styles.off}>-{off}%</span> : null}
+        {!inStock && <span className={styles.soldOut}>esgotado</span>}
+
+        <button
+          className={`${styles.heart} ${favorited ? styles.heartOn : ''}`}
+          onClick={handleHeart}
+          aria-label={favorited ? 'Remover dos favoritos' : 'Salvar nos favoritos'}
+          aria-pressed={favorited}
+        >
+          <Heart size={15} fill={favorited ? 'currentColor' : 'none'} />
+        </button>
       </div>
 
-      <div className={styles.meta}>
-        {brand && <span className={styles.tag}>{brand}</span>}
+      <div className={styles.body}>
+        <span className={styles.brand}>{brand || ' '}</span>
         <h3 className={styles.name}>{name}</h3>
 
-        <div className={styles.priceBlock}>
-          {originalPrice && <span className={styles.originalPrice}>{money(originalPrice)}</span>}
+        <div className={styles.prices}>
+          {originalPrice ? <span className={styles.was}>{money(originalPrice)}</span> : null}
           <span className={styles.price}>{money(price)}</span>
+          <span className={styles.parcela}>{installment(price)}</span>
         </div>
 
         <button
-          className={`${styles.addBtn} ${added ? styles.addBtnDone : ''}`}
+          className={`${styles.add} ${added ? styles.addDone : ''}`}
           onClick={handleAdd}
           disabled={!inStock}
         >
@@ -81,11 +90,11 @@ export default function ProductCard({ product }) {
             'indisponível'
           ) : added ? (
             <>
-              <Check size={14} /> no carrinho
+              <Check size={15} /> no carrinho
             </>
           ) : (
             <>
-              <Plus size={14} /> adicionar
+              <ShoppingCart size={15} /> adicionar
             </>
           )}
         </button>

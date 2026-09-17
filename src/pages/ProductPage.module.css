@@ -750,3 +750,65 @@
   .favBtn { min-height: var(--tap); justify-content: center; width: 100%; }
   .optionPill { min-height: var(--tap); display: inline-flex; align-items: center; font-size: 0.88rem; }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Área de compra, refeita.
+
+   O problema antigo: "adicionar" e "comprar" eram dois botões com alturas,
+   cores e raios próprios, declarados aqui. No celular ficavam visivelmente
+   diferentes. Agora os dois usam .btn do globals.css — uma altura só, a
+   mesma da loja inteira — e aqui sobra só o arranjo.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.qtyRow {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 12px;
+}
+.qtyLabel { font-size: .82rem; font-weight: var(--fw-semibold); color: var(--color-text-mid); }
+
+.qtyControl {
+  display: flex; align-items: center;
+  height: var(--btn-h-sm);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+.qtyBtn { width: 42px; height: 100%; }
+.qtyBtn:disabled { opacity: .35; cursor: default; }
+.qtyValue { min-width: 34px; font-size: .95rem; font-variant-numeric: tabular-nums; }
+
+.acoes { display: grid; gap: 9px; margin-bottom: 14px; }
+.addDone {
+  background: var(--color-green-mid) !important;
+  border-color: var(--color-green-mid) !important;
+  color: #fff !important;
+}
+
+/* ── barra fixa de compra (celular) ── */
+.barraFixa {
+  display: none;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+  align-items: center; gap: 12px;
+  padding: 10px var(--container-pad);
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  background: rgba(255,255,255,.97);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--color-border);
+  box-shadow: 0 -6px 24px rgba(27,32,25,.08);
+}
+.barraPreco { display: flex; flex-direction: column; line-height: 1.15; }
+.barraValor { font-size: 1.15rem; font-weight: var(--fw-bold); letter-spacing: -.02em; }
+.barraQtd { font-size: .72rem; color: var(--color-text-muted); }
+.barraFixa > :global(.btn) { flex: 1; }
+
+@media (max-width: 900px) {
+  .barraFixa { display: flex; }
+  /* Espaço para a barra não cobrir o rodapé. */
+  .relatedSection { padding-bottom: 88px; }
+}
+
+/* A barra fixa cobre o fim da página; este espaço devolve o rodapé. */
+@media (max-width: 900px) {
+  .main { padding-bottom: 78px; }
+}

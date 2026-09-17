@@ -69,6 +69,14 @@ function isTestEntry(name) {
   return n === 'teste produto' || n === 'produto teste' || n === 'categoria teste' || n === 'teste';
 }
 
+// O produto __BANNERS__ existe só para guardar as imagens do carrossel da
+// home (veja api/banners.js). Ele nunca é publicado, mas a checagem por nome
+// fica aqui de qualquer forma: se alguém publicá-lo por engano no admin da
+// Nuvemshop, a vitrine não passa a vender um "produto" que é um banner.
+function isBannerHolder(name) {
+  return (name || '').trim() === '__BANNERS__';
+}
+
 async function fetchStore(storeId) {
   try {
     const res = await fetch(`${baseUrl(storeId)}/store`, { headers: headers() });
@@ -219,6 +227,7 @@ export default async function handler(req, res) {
         // devolve produto despublicado junto. Sem esta checagem, itens que a
         // loja tirou da vitrine (por foto errada, por exemplo) reaparecem aqui.
         if (p.published === false) return false;
+        if (isBannerHolder(txt(p.name))) return false;
         return !isTestEntry(txt(p.name));
       })
       // A product without a category still belongs in /loja — only priceless

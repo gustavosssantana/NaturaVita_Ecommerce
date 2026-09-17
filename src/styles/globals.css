@@ -1,156 +1,242 @@
-/* ── Design Tokens ── */
+/* ─────────────────────────────────────────────────────────────────────────
+   NaturaVita — sistema de design
+
+   A loja é lida no celular, com o polegar. Por isso tudo aqui nasce do
+   toque: nenhum alvo clicável abaixo de 44px, nenhuma linha que exija
+   zoom, nenhum botão com altura diferente do vizinho.
+
+   As alturas de botão são variáveis (--btn-h e --btn-h-sm), não números
+   soltos em cada arquivo. Foi assim que "adicionar" e "comprar" acabaram
+   de tamanhos diferentes na página do produto: cada um tinha o seu.
+   ───────────────────────────────────────────────────────────────────────── */
+
 :root {
-  /* Palette */
-  --color-cream:        #F5F1EA;
+  /* ── Cor ──────────────────────────────────────────────────────────────
+     A marca continua verde e creme. O que mudou é o papel do fundo: a
+     vitrine agora é clara e neutra, e o verde ficou para o cabeçalho,
+     os preços e as ações — é o que dá o ar de loja grande. */
+  --color-cream:        #F6F4EF;
+  --color-bg:           #F2F1ED;   /* fundo da página */
+  --color-surface:      #FFFFFF;   /* cartões, barras */
   --color-white:        #FFFFFF;
 
-  --color-green-deep:   #2B3B27;   /* headlines, dark sections bg */
-  --color-green-mid:    #3A5432;   /* buttons, links */
-  --color-green-accent: #4E7A40;   /* italic text, accents */
-  --color-green-light:  #6FA060;   /* softer green */
-  --color-green-sage:   #B8CBAE;   /* very light, border */
+  --color-green-deep:   #22331F;
+  --color-green-mid:    #34502C;
+  --color-green-accent: #4E7A40;
+  --color-green-light:  #6FA060;
+  --color-green-sage:   #B8CBAE;
+  --color-green-wash:   #EDF3EA;
 
-  --color-orange:       #C8531A;   /* CTAs */
+  --color-orange:       #C8531A;
   --color-orange-hover: #A84215;
 
-  --color-text:         #1C1C1C;
+  --color-price:        #17A34A;   /* verde de desconto, como em marketplace */
+  --color-price-bg:     #E8F6EE;
+
+  --color-text:         #1B1B1B;
   --color-text-mid:     #4A4A4A;
-  --color-text-muted:   #7A7A7A;
-  --color-border:       #D8D2C6;
+  --color-text-muted:   #767676;
+  --color-text-soft:    #767676;
+  --color-border:       #E3E0D9;
+  --color-border-soft:  #EFEDE7;
 
-  /* Typography */
-  --font-sans:    'DM Sans', system-ui, sans-serif;
-  --font-display: 'Fraunces', Georgia, serif;   /* italic display only */
+  /* ── Tipografia ── */
+  --font-sans:    'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
 
-  --fw-light:     300;
-  --fw-regular:   400;
-  --fw-medium:    500;
-  --fw-semibold:  600;
-  --fw-bold:      700;
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
 
-  /* Shape */
-  --radius-xs:   4px;
-  --radius-sm:   8px;
-  --radius-md:   14px;
-  --radius-lg:   22px;
-  --radius-xl:   32px;
+  /* ── Forma ── */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
   --radius-full: 9999px;
 
-  /* Shadow */
-  --shadow-xs: 0 1px 3px rgba(43, 59, 39, 0.08);
-  --shadow-sm: 0 2px 8px rgba(43, 59, 39, 0.10);
-  --shadow-md: 0 6px 24px rgba(43, 59, 39, 0.12);
-  --shadow-lg: 0 12px 40px rgba(43, 59, 39, 0.15);
+  /* ── Sombra ── */
+  --shadow-xs: 0 1px 2px rgba(27, 32, 25, .06);
+  --shadow-sm: 0 2px 10px rgba(27, 32, 25, .07);
+  --shadow-md: 0 8px 28px rgba(27, 32, 25, .10);
+  --shadow-lg: 0 18px 50px rgba(27, 32, 25, .14);
 
-  /* Layout */
-  --container-width: 1200px;
-  --container-pad: 28px;
-  --section-pad: 80px 0;
-  --section-pad-sm: 56px 0;
+  /* ── Layout ── */
+  --container-width: 1280px;
+  --container-pad: 24px;
+  --section-gap: 52px;
 
-  /* Minimum comfortable tap target on touch screens */
+  /* ── Toque e controles ──
+     Um número só para a altura dos botões. Mudar aqui muda a loja toda. */
   --tap: 44px;
+  --btn-h: 50px;
+  --btn-h-sm: 42px;
+
+  --header-h: 62px;
 }
 
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; font-size: 16px; }
+html { font-size: 16px; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 body {
   font-family: var(--font-sans);
   color: var(--color-text);
-  background: var(--color-cream);
+  background: var(--color-bg);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
-img    { display: block; max-width: 100%; }
-a      { color: inherit; text-decoration: none; }
-button { font-family: inherit; cursor: pointer; border: none; background: none; }
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; color: inherit; cursor: pointer; border: none; background: none; }
+input, select, textarea { font-family: inherit; font-size: 1rem; }
 ul, ol { list-style: none; }
+:focus-visible { outline: 2px solid var(--color-green-accent); outline-offset: 2px; }
 
-/* ── Utilities ── */
+/* ── Utilidades ── */
 .container {
+  width: 100%;
   max-width: var(--container-width);
   margin: 0 auto;
   padding: 0 var(--container-pad);
 }
 
-.section     { padding: var(--section-pad); }
-.section-sm  { padding: var(--section-pad-sm); }
+.section { padding: var(--section-gap) 0; }
+.section-tight { padding: 28px 0; }
 
-/* Section header helpers */
-.section-label {
-  display: inline-block;
-  font-size: 0.75rem;
-  font-weight: var(--fw-semibold);
-  color: var(--color-text-muted);
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  padding: 5px 14px;
-  border-radius: var(--radius-full);
-  letter-spacing: 0.04em;
-  margin-bottom: 14px;
+/* Cabeçalho de seção: título à esquerda, link à direita, na mesma linha
+   base — inclusive no celular, onde empilhar só criava rolagem. */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
 }
-
 .section-title {
-  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-size: clamp(1.15rem, 3.4vw, 1.6rem);
   font-weight: var(--fw-bold);
-  color: var(--color-text);
-  line-height: 1.1;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
-
-.section-title-italic {
-  display: block;
+.section-title em {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: var(--fw-semibold);
   color: var(--color-green-accent);
 }
-
-.section-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: 36px;
+.section-link {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .85rem;
+  font-weight: var(--fw-semibold);
+  color: var(--color-green-accent);
+  white-space: nowrap;
 }
 
-/* ── Mobile Responsive Globals ── */
-@media (max-width: 768px) {
-  :root {
-    --section-pad: 56px 0;
-    --section-pad-sm: 40px 0;
-    --container-pad: 20px;
-  }
-  .section-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 24px; }
-}
-
-@media (max-width: 480px) {
-  :root {
-    --section-pad: 44px 0;
-    --section-pad-sm: 32px 0;
-    --container-pad: 16px;
-  }
-  .section-title { font-size: 1.75rem; }
-}
-
-
-/* Image placeholder */
-.img-placeholder {
-  background: var(--color-cream);
-  background-image: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 12px,
-    rgba(43, 59, 39, 0.04) 12px,
-    rgba(43, 59, 39, 0.04) 24px
-  );
-  border-radius: var(--radius-md);
-  display: flex;
+/* ── Botões compartilhados ──
+   Toda ação primária da loja usa .btn. Assim "adicionar ao carrinho" e
+   "comprar agora" têm exatamente a mesma altura, em qualquer tela. */
+.btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  height: var(--btn-h);
+  min-height: var(--btn-h);
+  padding: 0 22px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid transparent;
+  font-size: .95rem;
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+  white-space: nowrap;
+  transition: transform .12s ease, filter .15s ease, background .15s ease, border-color .15s ease;
+}
+.btn:active:not(:disabled) { transform: scale(.985); }
+.btn:disabled { opacity: .5; cursor: default; }
+
+.btn-primary { background: var(--color-green-mid); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--color-green-deep); }
+
+.btn-accent { background: var(--color-orange); color: #fff; }
+.btn-accent:hover:not(:disabled) { background: var(--color-orange-hover); }
+
+.btn-outline {
+  background: var(--color-surface);
+  color: var(--color-green-mid);
+  border-color: var(--color-green-sage);
+}
+.btn-outline:hover:not(:disabled) { border-color: var(--color-green-mid); }
+
+.btn-ghost { background: transparent; color: var(--color-text-mid); border-color: var(--color-border); }
+.btn-ghost:hover:not(:disabled) { border-color: var(--color-text-muted); }
+
+.btn-block { width: 100%; }
+.btn-sm { height: var(--btn-h-sm); min-height: var(--btn-h-sm); padding: 0 16px; font-size: .88rem; }
+
+/* ── Cartão ── */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+}
+
+/* ── Trilho horizontal ──
+   No celular as listas viram trilhos deslizantes que sangram até a borda
+   da tela — pilha vertical de 24 produtos vira rolagem infinita. */
+.rail {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+.rail::-webkit-scrollbar { display: none; }
+.rail > * { scroll-snap-align: start; flex: 0 0 auto; }
+
+.rail-bleed {
+  margin-inline: calc(var(--container-pad) * -1);
+  padding-inline: var(--container-pad);
+}
+
+/* Marcador de carregamento */
+.skeleton {
+  background: linear-gradient(100deg, #eceae4 30%, #f5f4f0 50%, #eceae4 70%);
+  background-size: 220% 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes shimmer { to { background-position: -220% 0; } }
+
+/* Placeholder de imagem ausente */
+.img-placeholder {
+  background: var(--color-cream);
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 12px,
+    rgba(43,59,39,.04) 12px, rgba(43,59,39,.04) 24px);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
   color: var(--color-text-muted);
-  font-size: 0.7rem;
-  font-weight: var(--fw-medium);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: .7rem; font-weight: var(--fw-medium);
+  letter-spacing: .08em; text-transform: uppercase;
+}
+
+/* ── Telas menores ── */
+@media (max-width: 900px) {
+  :root { --container-pad: 18px; --section-gap: 36px; }
+}
+@media (max-width: 480px) {
+  :root { --container-pad: 14px; --section-gap: 30px; --btn-h: 48px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  html { scroll-behavior: auto; }
 }

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Lock, Search, Plus, ArrowLeft, Camera, Loader2, Check, AlertCircle, Eye, EyeOff,
-  Package,
+  Package, Image as ImageIcon, Boxes, Trash2, ChevronUp, ChevronDown, Link2, LogOut,
+  Leaf,
 } from 'lucide-react';
 import { money } from '../lib/format';
 import styles from './AdminPage.module.css';
@@ -13,7 +14,7 @@ const VAZIO = {
 };
 
 /**
- * Painel do lojista: cria e edita produtos direto na Nuvemshop.
+ * Painel do lojista: produtos e banners da home, direto na Nuvemshop.
  *
  * A senha nunca decide nada aqui — ela vai em toda chamada e é conferida no
  * servidor. Esconder um botão não protege nada: quem chamar /api/admin sem
@@ -24,6 +25,8 @@ export default function AdminPage() {
   const [dentro, setDentro] = useState(false);
   const [erro, setErro] = useState(null);
   const [ocupado, setOcupado] = useState(false);
+
+  const [secao, setSecao] = useState('produtos'); // produtos | banners
 
   const [produtos, setProdutos] = useState([]);
   const [busca, setBusca] = useState('');
@@ -129,6 +132,14 @@ export default function AdminPage() {
     }
   }
 
+  function sair() {
+    try { sessionStorage.removeItem(CHAVE); } catch { /* ignora */ }
+    setSenha('');
+    setDentro(false);
+    setProdutos([]);
+    setEditando(null);
+  }
+
   function abrir(p) {
     setAviso(null);
     setErro(null);
@@ -195,15 +206,19 @@ export default function AdminPage() {
     return (
       <main className={styles.loginWrap}>
         <form className={styles.loginBox} onSubmit={entrar}>
-          <Lock size={22} className={styles.loginIcone} />
+          <span className={styles.loginMarca}>
+            <Leaf size={17} strokeWidth={2.3} />
+          </span>
           <h1 className={styles.loginTitulo}>Painel Natura Vita</h1>
           <p className={styles.loginSub}>Acesso restrito ao lojista.</p>
-          <input
-            type="password" value={senha} onChange={(ev) => setSenha(ev.target.value)}
-            placeholder="senha" autoComplete="current-password"
-            className={styles.input} disabled={ocupado}
-          />
-          {erro && <p className={styles.erro} role="alert">{erro}</p>}
+          <div className={styles.loginCampo}>
+            <Lock size={16} />
+            <input
+              type="password" value={senha} onChange={(ev) => setSenha(ev.target.value)}
+              placeholder="senha" autoComplete="current-password" disabled={ocupado}
+            />
+          </div>
+          {erro && <p className={styles.erro} role="alert"><AlertCircle size={14} /> {erro}</p>}
           <button type="submit" className={styles.btnPrincipal} disabled={ocupado || !senha}>
             {ocupado ? <Loader2 size={16} className={styles.girando} /> : 'entrar'}
           </button>
@@ -217,11 +232,17 @@ export default function AdminPage() {
     const novo = editando === 'novo';
     return (
       <main className={styles.wrap}>
+        <BarraTopo secao={secao} setSecao={() => {}} sair={sair} compacto />
         <div className={styles.container}>
           <button className={styles.voltar} onClick={() => setEditando(null)} type="button">
-            <ArrowLeft size={15} /> voltar
+            <ArrowLeft size={15} /> voltar para a lista
           </button>
           <h1 className={styles.titulo}>{novo ? 'Novo produto' : 'Editar produto'}</h1>
+          <p className={styles.subtitulo}>
+            {novo
+              ? 'Tire a foto, preencha e envie. Ele aparece na loja em seguida.'
+              : 'O que você mudar aqui vale na loja assim que salvar.'}
+          </p>
 
           <form onSubmit={salvar} className={styles.form}>
             <div className={styles.fotoBloco}>
@@ -234,20 +255,23 @@ export default function AdminPage() {
                   <span className={styles.semFoto}>sem foto</span>
                 )}
               </div>
-              <div>
+              <div className={styles.fotoLado}>
                 <button
                   type="button" className={styles.btnFoto}
                   onClick={() => arquivoRef.current?.click()} disabled={ocupado}
                 >
-                  <Camera size={15} /> {form.foto ? 'trocar foto' : 'tirar ou escolher foto'}
+                  <Camera size={16} /> {form.foto ? 'trocar foto' : 'tirar ou escolher foto'}
                 </button>
                 {/* capture abre a câmera direto no celular */}
                 <input
                   ref={arquivoRef} type="file" accept="image/jpeg,image/png,image/webp"
                   capture="environment" onChange={escolherFoto} hidden
                 />
+                <p className={styles.dica}>
+                  Fundo claro e o produto inteiro na foto. Formato quadrado fica melhor na vitrine.
+                </p>
                 {!novo && form.foto && (
-                  <p className={styles.dica}>A foto atual será substituída ao salvar.</p>
+                  <p className={styles.dicaForte}>A foto atual será substituída ao salvar.</p>
                 )}
               </div>
             </div>
@@ -256,6 +280,7 @@ export default function AdminPage() {
               <span>Nome</span>
               <input
                 className={styles.input} value={form.nome} disabled={ocupado}
+                placeholder="Ex.: Whey Protein Concentrado 900g Baunilha"
                 onChange={(ev) => setForm((s) => ({ ...s, nome: ev.target.value }))}
               />
             </label>
@@ -276,7 +301,7 @@ export default function AdminPage() {
               <label className={styles.campo}>
                 <span>Preço (R$)</span>
                 <input
-                  className={styles.input} type="number" step="0.01" min="0"
+                  className={styles.input} type="number" step="0.01" min="0" inputMode="decimal"
                   value={form.preco} disabled={ocupado}
                   onChange={(ev) => setForm((s) => ({ ...s, preco: ev.target.value }))}
                 />
@@ -284,7 +309,7 @@ export default function AdminPage() {
               <label className={styles.campo}>
                 <span>Estoque</span>
                 <input
-                  className={styles.input} type="number" step="1" min="0"
+                  className={styles.input} type="number" step="1" min="0" inputMode="numeric"
                   value={form.estoque} disabled={ocupado} placeholder="ilimitado"
                   onChange={(ev) => setForm((s) => ({ ...s, estoque: ev.target.value }))}
                 />
@@ -337,12 +362,32 @@ export default function AdminPage() {
 
             {erro && <p className={styles.erro} role="alert"><AlertCircle size={14} /> {erro}</p>}
 
-            <button type="submit" className={styles.btnPrincipal} disabled={ocupado}>
-              {ocupado ? (
-                <><Loader2 size={16} className={styles.girando} /> salvando…</>
-              ) : novo ? 'criar produto' : 'salvar alterações'}
-            </button>
+            <div className={styles.barraSalvar}>
+              <button type="submit" className={styles.btnPrincipal} disabled={ocupado}>
+                {ocupado ? (
+                  <><Loader2 size={16} className={styles.girando} /> salvando…</>
+                ) : novo ? 'criar produto' : 'salvar alterações'}
+              </button>
+              <button
+                type="button" className={styles.btnSecundario}
+                onClick={() => setEditando(null)} disabled={ocupado}
+              >
+                cancelar
+              </button>
+            </div>
           </form>
+        </div>
+      </main>
+    );
+  }
+
+  // ── banners ───────────────────────────────────────────────────────────────
+  if (secao === 'banners') {
+    return (
+      <main className={styles.wrap}>
+        <BarraTopo secao={secao} setSecao={setSecao} sair={sair} />
+        <div className={styles.container}>
+          <PainelBanners chamar={chamar} />
         </div>
       </main>
     );
@@ -351,11 +396,17 @@ export default function AdminPage() {
   // ── lista ─────────────────────────────────────────────────────────────────
   return (
     <main className={styles.wrap}>
+      <BarraTopo secao={secao} setSecao={setSecao} sair={sair} />
       <div className={styles.container}>
         <div className={styles.topo}>
-          <h1 className={styles.titulo}>Produtos</h1>
+          <div>
+            <h1 className={styles.titulo}>Produtos</h1>
+            <p className={styles.subtitulo}>
+              {totais ? `${totais.loja} na loja · ${totais.ocultos} ocultos` : 'carregando…'}
+            </p>
+          </div>
           <button className={styles.btnPrincipal} onClick={() => abrir('novo')} type="button">
-            <Plus size={16} /> novo produto
+            <Plus size={17} /> novo produto
           </button>
         </div>
 
@@ -380,7 +431,7 @@ export default function AdminPage() {
 
         {filtro === 'ocultos' && totais?.ocultosComEstoque > 0 && (
           <p className={styles.destaque}>
-            <Package size={14} />
+            <Package size={15} />
             <span>
               <strong>{totais.ocultosComEstoque}</strong> destes têm estoque — são produtos
               na prateleira que não estão à venda. Aparecem primeiro na lista.
@@ -392,7 +443,7 @@ export default function AdminPage() {
           className={styles.buscaBox}
           onSubmit={(ev) => { ev.preventDefault(); carregar(busca, filtro); }}
         >
-          <Search size={15} />
+          <Search size={16} />
           <input
             className={styles.buscaInput} value={busca} placeholder="buscar por nome ou código"
             onChange={(ev) => setBusca(ev.target.value)}
@@ -400,58 +451,285 @@ export default function AdminPage() {
           <button type="submit" className={styles.btnSecundario} disabled={ocupado}>buscar</button>
         </form>
 
-        {ocupado && <p className={styles.estado}>carregando…</p>}
+        {ocupado && (
+          <ul className={styles.lista}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <li key={i} className={`${styles.item} ${styles.fantasma}`} aria-hidden="true">
+                <div className={styles.itemFoto} />
+                <div className={styles.itemInfo}>
+                  <span className={styles.barraFalsa} />
+                  <span className={`${styles.barraFalsa} ${styles.barraCurta}`} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
 
-        <ul className={styles.lista}>
-          {produtos.map((p) => (
-            <li key={p.id} className={styles.item}>
-              <div className={styles.itemFoto}>
-                {p.imagem ? <img src={p.imagem} alt="" loading="lazy" /> : <span>—</span>}
-              </div>
-              <div className={styles.itemInfo}>
-                <p className={styles.itemNome}>{p.nome}</p>
-                <p className={styles.itemMeta}>
-                  {money(p.precoOriginal || p.preco)}
-                  {p.estoque !== null && ` · ${p.estoque} em estoque`}
-                  {p.sku && ` · ${p.sku}`}
-                </p>
-              </div>
-              {/* Os dois selos ficam num invólucro só: o de estoque é
-                  condicional, e sem isso a linha teria ora 4 ora 5 colunas. */}
-              <div className={styles.itemTags}>
-                {p.estoque !== null && p.estoque > 0 && !p.publicado && (
-                  <span className={styles.tagEstoque}>
-                    <Package size={11} /> {p.estoque} na prateleira
-                  </span>
-                )}
-                <button
-                  type="button"
-                  className={p.publicado ? styles.tagOn : styles.tagOff}
-                  onClick={() => alternarPublicacao(p)}
-                  disabled={alternando === p.id}
-                  title={p.publicado ? 'Ocultar da loja' : 'Mostrar na loja'}
-                >
-                  {alternando === p.id ? (
-                    <Loader2 size={12} className={styles.girando} />
-                  ) : p.publicado ? (
-                    <Eye size={12} />
-                  ) : (
-                    <EyeOff size={12} />
+        {!ocupado && (
+          <ul className={styles.lista}>
+            {produtos.map((p) => (
+              <li key={p.id} className={styles.item}>
+                <div className={styles.itemFoto}>
+                  {p.imagem ? <img src={p.imagem} alt="" loading="lazy" /> : <span>—</span>}
+                </div>
+                <div className={styles.itemInfo}>
+                  <p className={styles.itemNome}>{p.nome}</p>
+                  <p className={styles.itemMeta}>
+                    {money(p.precoOriginal || p.preco)}
+                    {p.estoque !== null && ` · ${p.estoque} em estoque`}
+                    {p.sku && ` · ${p.sku}`}
+                  </p>
+                </div>
+                {/* Os dois selos ficam num invólucro só: o de estoque é
+                    condicional, e sem isso a linha teria ora 4 ora 5 colunas. */}
+                <div className={styles.itemTags}>
+                  {p.estoque !== null && p.estoque > 0 && !p.publicado && (
+                    <span className={styles.tagEstoque}>
+                      <Package size={11} /> {p.estoque} na prateleira
+                    </span>
                   )}
-                  {p.publicado ? 'na loja' : 'oculto'}
+                  <button
+                    type="button"
+                    className={p.publicado ? styles.tagOn : styles.tagOff}
+                    onClick={() => alternarPublicacao(p)}
+                    disabled={alternando === p.id}
+                    title={p.publicado ? 'Ocultar da loja' : 'Mostrar na loja'}
+                  >
+                    {alternando === p.id ? (
+                      <Loader2 size={12} className={styles.girando} />
+                    ) : p.publicado ? (
+                      <Eye size={12} />
+                    ) : (
+                      <EyeOff size={12} />
+                    )}
+                    {p.publicado ? 'na loja' : 'oculto'}
+                  </button>
+                </div>
+                <button className={styles.btnSecundario} onClick={() => abrir(p)} type="button">
+                  editar
                 </button>
-              </div>
-              <button className={styles.btnSecundario} onClick={() => abrir(p)} type="button">
-                editar
-              </button>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {!ocupado && !produtos.length && (
-          <p className={styles.estado}>Nenhum produto encontrado.</p>
+          <p className={styles.vazio}>
+            <Boxes size={26} />
+            Nenhum produto encontrado com esse filtro.
+          </p>
         )}
       </div>
     </main>
+  );
+}
+
+/** Barra fixa do painel: onde estou, para onde vou, e como sair. */
+function BarraTopo({ secao, setSecao, sair, compacto = false }) {
+  return (
+    <header className={styles.barra}>
+      <div className={styles.barraInterna}>
+        <span className={styles.barraMarca}>
+          <Leaf size={15} strokeWidth={2.4} />
+          <span>Natura Vita</span>
+        </span>
+
+        {!compacto && (
+          <nav className={styles.barraNav}>
+            <button
+              type="button"
+              className={`${styles.barraLink} ${secao === 'produtos' ? styles.barraLinkOn : ''}`}
+              onClick={() => setSecao('produtos')}
+            >
+              <Boxes size={15} /> Produtos
+            </button>
+            <button
+              type="button"
+              className={`${styles.barraLink} ${secao === 'banners' ? styles.barraLinkOn : ''}`}
+              onClick={() => setSecao('banners')}
+            >
+              <ImageIcon size={15} /> Banners
+            </button>
+          </nav>
+        )}
+
+        <button type="button" className={styles.barraSair} onClick={sair} title="Sair do painel">
+          <LogOut size={16} />
+        </button>
+      </div>
+    </header>
+  );
+}
+
+/**
+ * Banners da home. São as imagens de promoção que giram no topo da loja.
+ * O máximo é 8 — mais que isso e o visitante nunca chega a ver o último.
+ */
+function PainelBanners({ chamar }) {
+  const [banners, setBanners] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [ocupado, setOcupado] = useState(false);
+  const [erro, setErro] = useState(null);
+  const [aviso, setAviso] = useState(null);
+  const [links, setLinks] = useState({});
+  const entradaRef = useRef(null);
+
+  const recarregar = useCallback(async () => {
+    setCarregando(true);
+    setErro(null);
+    try {
+      const r = await chamar('banners');
+      setBanners(r.banners || []);
+      setLinks(Object.fromEntries((r.banners || []).map((b) => [b.id, b.link || ''])));
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setCarregando(false);
+    }
+  }, [chamar]);
+
+  useEffect(() => { recarregar(); }, [recarregar]);
+
+  function aplicar(r) {
+    setBanners(r.banners || []);
+    setLinks(Object.fromEntries((r.banners || []).map((b) => [b.id, b.link || ''])));
+  }
+
+  async function subir(e) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    if (f.size > 9 * 1024 * 1024) {
+      setErro('A imagem é grande demais (máximo 9 MB).');
+      return;
+    }
+    setErro(null);
+    setAviso(null);
+    const leitor = new FileReader();
+    leitor.onload = async () => {
+      setOcupado(true);
+      try {
+        aplicar(await chamar('banner_adicionar', { foto: leitor.result, fotoNome: f.name }));
+        setAviso('Banner publicado. Ele aparece na home em até um minuto.');
+      } catch (err) {
+        setErro(err.message);
+      } finally {
+        setOcupado(false);
+      }
+    };
+    leitor.readAsDataURL(f);
+  }
+
+  async function operar(acao, dados, mensagem) {
+    setOcupado(true);
+    setErro(null);
+    setAviso(null);
+    try {
+      aplicar(await chamar(acao, dados));
+      if (mensagem) setAviso(mensagem);
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  return (
+    <>
+      <div className={styles.topo}>
+        <div>
+          <h1 className={styles.titulo}>Banners da home</h1>
+          <p className={styles.subtitulo}>
+            As imagens de promoção que giram no topo da loja. {banners.length} de 8.
+          </p>
+        </div>
+        <button
+          type="button" className={styles.btnPrincipal}
+          onClick={() => entradaRef.current?.click()}
+          disabled={ocupado || banners.length >= 8}
+        >
+          {ocupado ? <Loader2 size={16} className={styles.girando} /> : <Plus size={17} />}
+          subir imagem
+        </button>
+        <input
+          ref={entradaRef} type="file" accept="image/jpeg,image/png,image/webp"
+          onChange={subir} hidden
+        />
+      </div>
+
+      {aviso && <p className={styles.ok}><Check size={14} /> {aviso}</p>}
+      {erro && <p className={styles.erro} role="alert"><AlertCircle size={14} /> {erro}</p>}
+
+      <p className={styles.destaque}>
+        <ImageIcon size={15} />
+        <span>
+          Use imagens deitadas, de <strong>1400 × 480 pixels</strong> ou parecido. O texto
+          importante deve ficar no meio: no celular as bordas são cortadas.
+        </span>
+      </p>
+
+      {carregando && <p className={styles.estado}>carregando…</p>}
+
+      {!carregando && !banners.length && (
+        <p className={styles.vazio}>
+          <ImageIcon size={26} />
+          Nenhum banner ainda. Enquanto não houver, a home mostra uma capa com o nome da loja.
+        </p>
+      )}
+
+      <ul className={styles.bannerLista}>
+        {banners.map((b, i) => (
+          <li key={b.id} className={styles.bannerItem}>
+            <span className={styles.bannerOrdem}>{i + 1}º</span>
+            <img src={b.src} alt="" className={styles.bannerFoto} />
+
+            <div className={styles.bannerAcoes}>
+              <label className={styles.bannerLink}>
+                <Link2 size={14} />
+                <input
+                  value={links[b.id] ?? ''}
+                  placeholder="para onde leva ao clicar (ex.: /vitaminas)"
+                  onChange={(ev) => setLinks((s) => ({ ...s, [b.id]: ev.target.value }))}
+                  disabled={ocupado}
+                />
+                {(links[b.id] ?? '') !== (b.link || '') && (
+                  <button
+                    type="button" className={styles.bannerSalvar}
+                    onClick={() => operar('banner_link', { imagemId: b.id, link: links[b.id] }, 'Link salvo.')}
+                    disabled={ocupado}
+                  >
+                    salvar
+                  </button>
+                )}
+              </label>
+
+              <div className={styles.bannerBotoes}>
+                <button
+                  type="button" className={styles.bannerIcone} title="Subir na ordem"
+                  disabled={ocupado || i === 0}
+                  onClick={() => operar('banner_mover', { imagemId: b.id, direcao: 'cima' })}
+                >
+                  <ChevronUp size={16} />
+                </button>
+                <button
+                  type="button" className={styles.bannerIcone} title="Descer na ordem"
+                  disabled={ocupado || i === banners.length - 1}
+                  onClick={() => operar('banner_mover', { imagemId: b.id, direcao: 'baixo' })}
+                >
+                  <ChevronDown size={16} />
+                </button>
+                <button
+                  type="button" className={`${styles.bannerIcone} ${styles.bannerRemover}`}
+                  title="Remover banner" disabled={ocupado}
+                  onClick={() => operar('banner_remover', { imagemId: b.id }, 'Banner removido.')}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }

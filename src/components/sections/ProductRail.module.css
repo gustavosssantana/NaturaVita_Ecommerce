@@ -1,0 +1,18 @@
+.sec { padding-block: calc(var(--section-gap) * .62); }
+
+.trilho { gap: 12px; }
+
+/* Largura fixa por cartão: é o que faz o próximo espiar na borda da tela e
+   avisar que a fileira continua. */
+.item { width: 210px; display: flex; }
+.item > * { width: 100%; }
+
+.fantasma { width: 210px; height: 330px; flex: 0 0 auto; }
+
+@media (max-width: 900px) {
+  .item, .fantasma { width: 172px; }
+  .fantasma { height: 292px; }
+}
+@media (max-width: 380px) {
+  .item, .fantasma { width: 156px; }
+}

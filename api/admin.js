@@ -51,6 +51,11 @@ function limpar(v, max) {
   return String(v ?? '').trim().slice(0, max);
 }
 
+// O produto que guarda os banners da home (veja api/banners.js). Ele não é um
+// produto de verdade, então some das listas do painel.
+const NOME_BANNERS = '__BANNERS__';
+const ehPortadorDeBanner = (p) => txt(p.name).trim() === NOME_BANNERS;
+
 function mapear(p) {
   const v = (p.variants || [])[0] || {};
   return {
@@ -156,7 +161,7 @@ export default async function handler(req, res) {
         const pagina = Math.max(1, Number(corpo.pagina) || 1);
         const porPagina = 30;
 
-        let lista = (await todosOsProdutos()).map(mapear);
+        let lista = (await todosOsProdutos()).filter((p) => !ehPortadorDeBanner(p)).map(mapear);
 
         const totais = {
           todos: lista.length,
@@ -300,6 +305,78 @@ export default async function handler(req, res) {
         return res.status(200).json({ produto: mapear(completo) });
       }
 
+      // ── banners da home ──────────────────────────────────────────────────
+      case 'banners': {
+        const portador = await acharPortadorBanners();
+        return res.status(200).json({ banners: montarBanners(portador) });
+      }
+
+      case 'banner_adicionar': {
+        if (!corpo.foto) return res.status(400).json({ erro: 'Escolha uma imagem.' });
+        const portador = await garantirPortadorBanners();
+        if ((portador.images || []).length >= 8) {
+          return res.status(400).json({ erro: 'O limite é 8 banners. Remova um antes de subir outro.' });
+        }
+        // `false` no último parâmetro: banner NOVO se soma aos que já existem,
+        // ao contrário da foto de produto, que substitui a anterior.
+        await subirFoto(portador.id, corpo.foto, corpo.fotoNome || 'banner', false);
+
+        const atualizado = await nuvem(`/products/${portador.id}`);
+        const link = limpar(corpo.link, 200);
+        if (link) {
+          const nova = (atualizado.images || []).slice().sort((a, b) => b.id - a.id)[0];
+          if (nova) await gravarMetaBanner(atualizado, String(nova.id), { link });
+        }
+        const final = link ? await nuvem(`/products/${portador.id}`) : atualizado;
+        return res.status(200).json({ banners: montarBanners(final) });
+      }
+
+      case 'banner_remover': {
+        const imagemId = Number(corpo.imagemId);
+        const portador = await acharPortadorBanners();
+        if (!portador || !imagemId) return res.status(400).json({ erro: 'Banner não encontrado.' });
+        await nuvem(`/products/${portador.id}/images/${imagemId}`, { method: 'DELETE' });
+        await gravarMetaBanner(portador, String(imagemId), null);
+        const final = await nuvem(`/products/${portador.id}`);
+        return res.status(200).json({ banners: montarBanners(final) });
+      }
+
+      case 'banner_link': {
+        const imagemId = Number(corpo.imagemId);
+        const portador = await acharPortadorBanners();
+        if (!portador || !imagemId) return res.status(400).json({ erro: 'Banner não encontrado.' });
+        await gravarMetaBanner(portador, String(imagemId), { link: limpar(corpo.link, 200) });
+        const final = await nuvem(`/products/${portador.id}`);
+        return res.status(200).json({ banners: montarBanners(final) });
+      }
+
+      case 'banner_mover': {
+        const imagemId = Number(corpo.imagemId);
+        const direcao = corpo.direcao === 'baixo' ? 1 : -1;
+        const portador = await acharPortadorBanners();
+        if (!portador || !imagemId) return res.status(400).json({ erro: 'Banner não encontrado.' });
+
+        const ordem = (portador.images || [])
+          .slice()
+          .sort((a, b) => (a.position || 0) - (b.position || 0));
+        const i = ordem.findIndex((img) => img.id === imagemId);
+        const j = i + direcao;
+        if (i < 0 || j < 0 || j >= ordem.length) {
+          return res.status(200).json({ banners: montarBanners(portador) });
+        }
+        [ordem[i], ordem[j]] = [ordem[j], ordem[i]];
+
+        // A Nuvemshop numera posições a partir de 1.
+        for (let k = 0; k < ordem.length; k++) {
+          await nuvem(`/products/${portador.id}/images/${ordem[k].id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ position: k + 1 }),
+          });
+        }
+        const final = await nuvem(`/products/${portador.id}`);
+        return res.status(200).json({ banners: montarBanners(final) });
+      }
+
       default:
         return res.status(400).json({ erro: 'Ação desconhecida.' });
     }
@@ -310,6 +387,83 @@ export default async function handler(req, res) {
     }
     return res.status(500).json({ erro: 'Não foi possível concluir. Tente novamente.' });
   }
+}
+
+// ── banners ─────────────────────────────────────────────────────────────────
+// As imagens do carrossel da home ficam guardadas como fotos de um produto
+// escondido chamado __BANNERS__. Não é gambiarra por preguiça: é a única
+// forma de o lojista subir uma imagem pelo celular sem este projeto depender
+// de um segundo serviço de armazenamento para manter cinco fotos.
+//
+// O link de cada banner vai na descrição desse produto, em JSON.
+
+async function acharPortadorBanners() {
+  try {
+    const achados = await nuvem('/products?q=BANNERS&per_page=50');
+    const p = (achados || []).find(ehPortadorDeBanner);
+    if (p) return p;
+  } catch {
+    // a busca por texto às vezes engasga com sublinhado; varremos abaixo
+  }
+  const todos = await todosOsProdutos();
+  return todos.find(ehPortadorDeBanner) || null;
+}
+
+async function garantirPortadorBanners() {
+  const existente = await acharPortadorBanners();
+  if (existente) return existente;
+
+  // Nasce despublicado e continua assim. Preço simbólico porque a API exige
+  // uma variante com preço — ele nunca aparece para ninguém.
+  const criado = await nuvem('/products', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: { pt: NOME_BANNERS },
+      description: { pt: '{}' },
+      published: false,
+      variants: [{ price: '0.01', stock: 0 }],
+    }),
+  });
+  invalidarCache();
+  return criado;
+}
+
+/** Atualiza (ou apaga, com dados = null) o registro de um banner na descrição. */
+async function gravarMetaBanner(portador, imagemId, dados) {
+  let meta = {};
+  try {
+    const bruto = txt(portador.description).trim();
+    if (bruto.startsWith('{')) meta = JSON.parse(bruto) || {};
+  } catch {
+    meta = {};
+  }
+  if (dados === null) delete meta[imagemId];
+  else meta[imagemId] = { ...(meta[imagemId] || {}), ...dados };
+
+  await nuvem(`/products/${portador.id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ description: { pt: JSON.stringify(meta) } }),
+  });
+}
+
+function montarBanners(portador) {
+  if (!portador) return [];
+  let meta = {};
+  try {
+    const bruto = txt(portador.description).trim();
+    if (bruto.startsWith('{')) meta = JSON.parse(bruto) || {};
+  } catch {
+    meta = {};
+  }
+  return (portador.images || [])
+    .slice()
+    .sort((a, b) => (a.position || 0) - (b.position || 0))
+    .map((img) => ({
+      id: img.id,
+      src: img.src,
+      link: meta[String(img.id)]?.link || '',
+    }))
+    .filter((b) => b.src);
 }
 
 // ── foto ────────────────────────────────────────────────────────────────────

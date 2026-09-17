@@ -1,60 +1,50 @@
-import { Truck, ShieldCheck, RefreshCw, CreditCard, ArrowRight } from 'lucide-react';
-import Link from '../ui/Link';
+import { ShieldCheck, Truck, CreditCard, MessageCircle } from 'lucide-react';
 import styles from './TrustSection.module.css';
 
-const ITEMS = [
+/**
+ * Só promessas que a loja consegue cumprir hoje. Nada de "frete grátis acima
+ * de X" enquanto o frete ainda é calculado no fechamento do pedido — promessa
+ * que o checkout não confirma vira reclamação.
+ */
+const ITENS = [
   {
-    icon: Truck,
-    title: 'Frete grátis acima de R$199',
-    text: 'Enviamos para todo o Brasil com rastreio.',
+    icone: ShieldCheck,
+    titulo: 'Produto lacrado e original',
+    texto: 'Marcas conhecidas, com procedência e validade conferidas antes do envio.',
   },
   {
-    icon: ShieldCheck,
-    title: 'Produtos lacrados',
-    text: 'Procedência conferida item a item.',
+    icone: CreditCard,
+    titulo: 'Pagamento seguro',
+    texto: 'Pix, boleto ou cartão. O pagamento acontece no ambiente protegido da loja.',
   },
   {
-    icon: RefreshCw,
-    title: 'Troca em até 7 dias',
-    text: 'Direito de arrependimento garantido por lei.',
+    icone: Truck,
+    titulo: 'Entrega para todo o Brasil',
+    texto: 'O valor e o prazo aparecem no fechamento do pedido, pelo seu CEP.',
   },
   {
-    icon: CreditCard,
-    title: 'Pagamento seguro',
-    text: 'Pix, boleto ou cartão em até 6x sem juros.',
+    icone: MessageCircle,
+    titulo: 'Atendimento direto',
+    texto: 'Dúvida sobre um produto? Você fala com quem separa o pedido.',
   },
 ];
 
 export default function TrustSection() {
   return (
-    <section className={styles.section}>
+    <section className={`section ${styles.sec}`}>
       <div className="container">
-        <div className={styles.grid}>
-          {ITEMS.map(({ icon: Icon, title, text }) => (
-            <div key={title} className={styles.item}>
-              <span className={styles.iconWrap}>
-                <Icon size={18} strokeWidth={1.9} />
+        <div className={styles.grade}>
+          {ITENS.map(({ icone: Icone, titulo, texto }) => (
+            <div key={titulo} className={styles.item}>
+              <span className={styles.icone}>
+                <Icone size={19} strokeWidth={1.9} />
               </span>
-              <div className={styles.itemText}>
-                <p className={styles.itemTitle}>{title}</p>
-                <p className={styles.itemDesc}>{text}</p>
+              <div>
+                <p className={styles.titulo}>{titulo}</p>
+                <p className={styles.texto}>{texto}</p>
               </div>
             </div>
           ))}
-        </div>
-
-        <div className={styles.cta}>
-          <div className={styles.ctaText}>
-            <h2 className={styles.ctaTitle}>
-              Tudo que você precisa, <em>em um lugar só.</em>
-            </h2>
-            <p className={styles.ctaDesc}>
-              Suplementos, vitaminas, granel, chás e naturais — com preço de loja e entrega rápida.
-            </p>
-          </div>
-          <Link href="/loja" className={styles.ctaBtn}>
-            Ver catálogo completo <ArrowRight size={15} />
-          </Link>
         </div>
       </div>
     </section>

@@ -11,7 +11,6 @@ import { useCart, useCartItems } from '../context/CartContext';
 import { money, installment } from '../lib/format';
 import styles from './CartPage.module.css';
 
-const FRETE_THRESHOLD = 199;
 
 const STEPS = ['carrinho', 'entrega', 'pagamento'];
 
@@ -22,7 +21,6 @@ export default function CartPage() {
   const [comprando, setComprando] = useState(false);
 
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
-  const freteLeft = Math.max(0, FRETE_THRESHOLD - subtotal);
 
   const cartIds = items.map((i) => i.id);
   const suggestions = products.filter((p) => !cartIds.includes(p.id) && p.image).slice(0, 4);
@@ -64,9 +62,7 @@ export default function CartPage() {
                     <p className={styles.cartSub}>
                       {items.reduce((s, i) => s + i.qty, 0)}{' '}
                       {items.reduce((s, i) => s + i.qty, 0) === 1 ? 'item' : 'itens'}
-                      {freteLeft > 0
-                        ? ` · faltam ${money(freteLeft)} para o frete grátis`
-                        : ' · você ganhou frete grátis 🎉'}
+                      {' · frete calculado no fechamento'}
                     </p>
                   )}
                 </div>
@@ -186,10 +182,10 @@ export default function CartPage() {
                       <ShieldCheck size={12} /> pagamento seguro na loja oficial
                     </span>
                     <span>
-                      <Clock size={12} /> envio em 24h úteis
+                      <Package size={12} /> entrega para todo o Brasil
                     </span>
                     <span>
-                      <Package size={12} /> frete grátis acima de {money(FRETE_THRESHOLD)}
+                      <Clock size={12} /> frete e prazo pelo seu CEP
                     </span>
                   </div>
                 </div>

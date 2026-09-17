@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Minus, Plus, Package, Clock, ShieldCheck, Heart, Check } from 'lucide-react';
+import { Minus, Plus, Package, Truck, ShieldCheck, Heart, Check, ShoppingCart } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import AnnouncementBar from '../components/layout/AnnouncementBar';
@@ -86,7 +86,7 @@ export default function ProductPage({ productId }) {
     <>
       <AnnouncementBar />
       <Header />
-      <main>
+      <main className={styles.main}>
         <div className={styles.breadcrumbBar}>
           <div className="container">
             <nav className={styles.breadcrumb}>
@@ -198,14 +198,19 @@ export default function ProductPage({ productId }) {
                   </span>
                 </div>
 
-                <div className={styles.purchaseRow}>
+                {/* Quantidade em linha própria, e as duas ações uma embaixo da
+                    outra, com a MESMA altura (.btn, do globals.css). Antes cada
+                    botão tinha a sua altura e no celular a diferença saltava. */}
+                <div className={styles.qtyRow}>
+                  <span className={styles.qtyLabel}>Quantidade</span>
                   <div className={styles.qtyControl}>
                     <button
                       className={styles.qtyBtn}
                       onClick={() => setQty((q) => Math.max(1, q - 1))}
                       aria-label="Diminuir quantidade"
+                      disabled={qty <= 1}
                     >
-                      <Minus size={13} />
+                      <Minus size={15} />
                     </button>
                     <span className={styles.qtyValue}>{qty}</span>
                     <button
@@ -213,58 +218,64 @@ export default function ProductPage({ productId }) {
                       onClick={() => setQty((q) => q + 1)}
                       aria-label="Aumentar quantidade"
                     >
-                      <Plus size={13} />
+                      <Plus size={15} />
                     </button>
                   </div>
+                </div>
+
+                <div className={styles.acoes}>
+                  {product.inStock && variant?.id && (
+                    <button
+                      type="button"
+                      className="btn btn-accent btn-block"
+                      onClick={() => setComprando(true)}
+                    >
+                      Comprar agora
+                    </button>
+                  )}
 
                   <button
-                    className={`${styles.addToCartBtn} ${added ? styles.addToCartDone : ''}`}
+                    className={`btn btn-outline btn-block ${added ? styles.addDone : ''}`}
                     onClick={handleAdd}
                     disabled={!product.inStock}
                   >
                     {added ? (
                       <>
-                        <Check size={15} /> adicionado
+                        <Check size={16} /> adicionado
                       </>
                     ) : (
-                      `adicionar · ${money(unitPrice * qty)}`
+                      <>
+                        <ShoppingCart size={16} /> Adicionar · {money(unitPrice * qty)}
+                      </>
                     )}
                   </button>
                 </div>
-
-                {product.inStock && variant?.id && (
-                  <button
-                    type="button"
-                    className={styles.buyNowBtn}
-                    onClick={() => setComprando(true)}
-                  >
-                    comprar este item
-                  </button>
-                )}
 
                 <button
                   className={`${styles.favBtn} ${favorited ? styles.favBtnActive : ''}`}
                   onClick={() => toggleFavorite(product.id)}
                 >
-                  <Heart size={14} />
+                  <Heart size={14} fill={favorited ? 'currentColor' : 'none'} />
                   {favorited ? 'salvo nos favoritos' : 'salvar nos favoritos'}
                 </button>
 
+                {/* Só o que a loja cumpre. Frete grátis e prazo de 24h saíram:
+                    o frete é calculado no fechamento, pelo CEP. */}
                 <div className={styles.benefits}>
                   <div className={styles.benefit}>
-                    <Package size={13} strokeWidth={2} />
-                    <span>Frete grátis acima de R$199</span>
-                  </div>
-                  <div className={styles.benefit}>
-                    <Clock size={13} strokeWidth={2} />
-                    <span>Envio em até 24h úteis</span>
-                  </div>
-                  <div className={styles.benefit}>
-                    <ShieldCheck size={13} strokeWidth={2} />
+                    <ShieldCheck size={14} strokeWidth={2} />
                     <span>Produto lacrado e original</span>
                   </div>
                   <div className={styles.benefit}>
-                    <ShieldCheck size={13} strokeWidth={2} />
+                    <Truck size={14} strokeWidth={2} />
+                    <span>Frete calculado pelo seu CEP</span>
+                  </div>
+                  <div className={styles.benefit}>
+                    <Package size={14} strokeWidth={2} />
+                    <span>Entrega para todo o Brasil</span>
+                  </div>
+                  <div className={styles.benefit}>
+                    <ShieldCheck size={14} strokeWidth={2} />
                     <span>Pagamento seguro</span>
                   </div>
                 </div>
@@ -299,6 +310,27 @@ export default function ProductPage({ productId }) {
           </section>
         )}
       </main>
+
+      {/* Barra fixa no celular: a ação de compra fica sempre ao alcance do
+          polegar, sem precisar rolar de volta. Some no desktop. */}
+      <div className={styles.barraFixa}>
+        <div className={styles.barraPreco}>
+          <span className={styles.barraValor}>{money(unitPrice * qty)}</span>
+          <span className={styles.barraQtd}>
+            {qty} {qty === 1 ? 'unidade' : 'unidades'}
+          </span>
+        </div>
+        {product.inStock && variant?.id ? (
+          <button type="button" className="btn btn-accent" onClick={() => setComprando(true)}>
+            Comprar agora
+          </button>
+        ) : (
+          <button className="btn btn-outline" onClick={handleAdd} disabled={!product.inStock}>
+            <ShoppingCart size={16} /> adicionar
+          </button>
+        )}
+      </div>
+
       <Footer />
       <CartToast />
 

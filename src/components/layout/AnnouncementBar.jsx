@@ -1,12 +1,13 @@
 import styles from './AnnouncementBar.module.css';
 
-// Only claims the store can actually keep — no invented promotions.
+// Só o que a loja cumpre hoje. As linhas sobre frete grátis e prazo de 24h
+// saíram daqui: o frete ainda é calculado no fechamento do pedido, e prometer
+// prazo que o checkout não confirma vira reclamação depois.
 const messages = [
-  'Frete grátis acima de R$ 199',
-  'Envio em até 24h úteis',
-  'Pague com Pix, boleto ou cartão',
   'Entrega para todo o Brasil',
+  'Pague com Pix, boleto ou cartão',
   'Produtos lacrados e com procedência',
+  'Frete calculado pelo seu CEP no fechamento',
 ];
 
 export default function AnnouncementBar() {

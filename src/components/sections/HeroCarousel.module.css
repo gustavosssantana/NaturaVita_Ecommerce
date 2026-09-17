@@ -1,0 +1,111 @@
+/* Faixa de banners. A proporção é fixa para que a home não "pule" quando as
+   imagens terminam de carregar, e é mais alta no celular porque banner
+   largo demais vira uma tira ilegível na vertical. */
+
+.wrap { padding: 16px 0 6px; }
+
+.palco {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-cream);
+  box-shadow: var(--shadow-sm);
+  touch-action: pan-y;
+}
+
+.trilho {
+  display: flex;
+  transition: transform .5s cubic-bezier(.4, 0, .2, 1);
+  will-change: transform;
+}
+
+.slide {
+  flex: 0 0 100%;
+  display: block;
+  aspect-ratio: 1280 / 380;
+  background: var(--color-cream);
+}
+.img { width: 100%; height: 100%; object-fit: cover; user-select: none; }
+
+/* ── setas ── */
+.seta {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  display: none; align-items: center; justify-content: center;
+  width: 42px; height: 42px;
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,.9);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+}
+.seta:hover { background: #fff; }
+.setaEsq { left: 12px; }
+.setaDir { right: 12px; }
+.palco:hover .seta { display: inline-flex; }
+
+/* ── pontinhos ── */
+.pontos {
+  position: absolute; left: 0; right: 0; bottom: 12px;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+}
+.ponto {
+  width: 8px; height: 8px; border-radius: var(--radius-full);
+  background: rgba(255,255,255,.55);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.12);
+  transition: width .2s ease, background .2s ease;
+}
+.pontoOn { width: 22px; background: #fff; }
+
+/* ── capa padrão (sem banner cadastrado) ── */
+.capa {
+  position: relative; overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-green-deep), var(--color-green-mid) 62%, var(--color-green-accent));
+  color: #fff;
+  padding: 44px 40px;
+  min-height: 320px;
+  display: flex; align-items: center;
+}
+.capaTexto { position: relative; z-index: 2; max-width: 620px; }
+.capaSelo {
+  display: inline-block; margin-bottom: 14px;
+  padding: 5px 13px; border-radius: var(--radius-full);
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.25);
+  font-size: .74rem; font-weight: var(--fw-semibold); letter-spacing: .04em;
+}
+.capaTitulo {
+  font-size: clamp(1.9rem, 5vw, 3.1rem);
+  font-weight: var(--fw-bold); line-height: 1.08; letter-spacing: -.03em;
+}
+.capaTitulo em {
+  font-family: var(--font-display); font-style: italic;
+  font-weight: var(--fw-semibold); color: var(--color-green-sage);
+}
+.capaSub {
+  margin: 14px 0 22px;
+  font-size: 1rem; line-height: 1.6; color: rgba(255,255,255,.85);
+  max-width: 46ch;
+}
+.capaBtn { padding-inline: 26px; }
+
+/* Folhagem decorativa, puramente visual. */
+.capaFolhas {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(360px 300px at 88% 18%, rgba(255,255,255,.12), transparent 70%),
+    radial-gradient(420px 360px at 72% 96%, rgba(111,160,96,.35), transparent 72%);
+}
+
+@media (max-width: 900px) {
+  .wrap { padding: 12px 0 4px; }
+  .slide { aspect-ratio: 16 / 10; }
+  .capa { padding: 32px 22px; min-height: 260px; }
+  .pontos { bottom: 9px; }
+}
+
+@media (max-width: 480px) {
+  .slide { aspect-ratio: 3 / 2; }
+  .palco { border-radius: var(--radius-md); }
+  .capa { border-radius: var(--radius-md); }
+  .capaBtn { width: 100%; }
+}

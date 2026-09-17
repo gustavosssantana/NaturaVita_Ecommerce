@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Heart, ShoppingCart, ChevronDown, Menu, X, Leaf } from 'lucide-react';
+import { Search, Heart, ShoppingCart, Menu, X, Leaf, ChevronRight } from 'lucide-react';
 import styles from './Header.module.css';
 import Link from '../ui/Link';
 import { navigate } from '../../lib/router';
@@ -7,31 +7,19 @@ import { useFavorites } from '../../context/FavoritesContext';
 import { useCart } from '../../context/CartContext';
 import { useCatalog } from '../../data/CatalogContext';
 
+/**
+ * Cabeçalho no formato de marketplace: a busca é o elemento principal e fica
+ * sempre visível, não escondida atrás de uma lupa. Abaixo dela, uma faixa de
+ * categorias que desliza com o dedo.
+ */
 export default function Header() {
   const { categories } = useCatalog();
   const { favoritesCount } = useFavorites();
   const { count: cartCount } = useCart();
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [shopOpen, setShopOpen] = useState(false);
   const [term, setTerm] = useState('');
-  const [searchOpen, setSearchOpen] = useState(false);
-
-  const shopRef = useRef(null);
-  const searchRef = useRef(null);
-  const searchInputRef = useRef(null);
-
-  // Top 4 categories get a direct slot in the bar; the rest live in the dropdown.
-  const quickLinks = categories.slice(0, 4);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (shopRef.current && !shopRef.current.contains(e.target)) setShopOpen(false);
-      if (searchRef.current && !searchRef.current.contains(e.target)) setSearchOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  const headerRef = useRef(null);
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
@@ -40,163 +28,145 @@ export default function Header() {
     };
   }, [mobileOpen]);
 
+  // Fecha o menu ao voltar/avançar no navegador.
+  useEffect(() => {
+    const fechar = () => setMobileOpen(false);
+    window.addEventListener('popstate', fechar);
+    return () => window.removeEventListener('popstate', fechar);
+  }, []);
+
   function submitSearch(e) {
     e?.preventDefault();
     const q = term.trim();
     if (!q) return;
-    setSearchOpen(false);
     setMobileOpen(false);
     navigate(`/busca?q=${encodeURIComponent(q)}`);
   }
 
   return (
-    <header className={styles.header}>
-      <div className={`container ${styles.inner}`}>
-        <Link href="/" className={styles.logo} onClick={() => setMobileOpen(false)}>
-          <span className={styles.logoIcon}>
-            <Leaf size={17} strokeWidth={2.3} />
-          </span>
-          <span className={styles.logoText}>
-            natura<em className={styles.logoVita}>vita</em>
-          </span>
-        </Link>
-
-        <nav className={styles.nav}>
-          <div className={styles.dropdownWrap} ref={shopRef}>
-            <button
-              className={styles.navLink}
-              onClick={() => setShopOpen((v) => !v)}
-              aria-expanded={shopOpen}
-            >
-              Loja
-              <ChevronDown size={10} strokeWidth={2.5} className={styles.chevron} />
-            </button>
-
-            {shopOpen && (
-              <div className={styles.megaMenu}>
-                <Link href="/loja" className={styles.megaAll} onClick={() => setShopOpen(false)}>
-                  Ver todos os produtos →
-                </Link>
-                <div className={styles.megaGrid}>
-                  {categories.map((c) => (
-                    <Link
-                      key={c.id}
-                      href={`/${c.slug}`}
-                      className={styles.megaItem}
-                      onClick={() => setShopOpen(false)}
-                    >
-                      <span className={styles.megaName}>{c.name}</span>
-                      <span className={styles.megaCount}>{c.count}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {quickLinks.map((c) => (
-            <Link key={c.id} href={`/${c.slug}`} className={styles.navLink}>
-              {c.name}
-            </Link>
-          ))}
-        </nav>
-
-        <div className={styles.actions}>
-          <div
-            className={`${styles.searchWrap} ${searchOpen ? styles.searchExpanded : ''}`}
-            ref={searchRef}
-          >
-            <button
-              type="button"
-              className={styles.searchIconBtn}
-              aria-label="Buscar produtos"
-              onClick={() => {
-                setSearchOpen(true);
-                setTimeout(() => searchInputRef.current?.focus(), 80);
-              }}
-            >
-              <Search size={16} strokeWidth={1.9} />
-            </button>
-            <form onSubmit={submitSearch} className={styles.searchForm}>
-              <input
-                ref={searchInputRef}
-                type="search"
-                placeholder="Buscar produtos..."
-                className={styles.searchInput}
-                value={term}
-                onChange={(e) => setTerm(e.target.value)}
-                onKeyDown={(e) => e.key === 'Escape' && setSearchOpen(false)}
-                tabIndex={searchOpen ? 0 : -1}
-              />
-            </form>
-          </div>
-
-          <span className={styles.divider} />
-
-          <Link href="/favoritos" className={`${styles.iconBtn} ${styles.heartBtn}`} aria-label="Favoritos">
-            <Heart size={17} strokeWidth={1.9} />
-            {favoritesCount > 0 && <span className={styles.dot}>{favoritesCount}</span>}
-          </Link>
-
-          <Link href="/carrinho" className={styles.cartPill} aria-label="Carrinho">
-            <ShoppingCart size={15} strokeWidth={2} />
-            <span className={styles.cartLabel}>Carrinho</span>
-            {cartCount > 0 && <span className={styles.cartCount}>{cartCount}</span>}
-          </Link>
-
+    <header className={styles.header} ref={headerRef}>
+      <div className={styles.top}>
+        <div className={`container ${styles.topInner}`}>
           <button
-            className={styles.mobileToggle}
+            className={styles.menuBtn}
             onClick={() => setMobileOpen((v) => !v)}
             aria-label={mobileOpen ? 'Fechar menu' : 'Abrir menu'}
             aria-expanded={mobileOpen}
           >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            {mobileOpen ? <X size={21} /> : <Menu size={21} />}
           </button>
-        </div>
-      </div>
 
-      {mobileOpen && (
-        <div className={styles.mobilePanel}>
-          <form onSubmit={submitSearch} className={styles.mobileSearch}>
-            <Search size={16} strokeWidth={2} />
+          <Link href="/" className={styles.logo} onClick={() => setMobileOpen(false)}>
+            <span className={styles.logoIcon}>
+              <Leaf size={16} strokeWidth={2.4} />
+            </span>
+            <span className={styles.logoText}>
+              natura<em>vita</em>
+            </span>
+          </Link>
+
+          <form onSubmit={submitSearch} className={styles.search}>
+            <Search size={17} strokeWidth={2} className={styles.searchIcon} />
             <input
               type="search"
-              placeholder="Buscar produtos..."
+              inputMode="search"
+              placeholder="Buscar suplementos, vitaminas, naturais…"
               value={term}
               onChange={(e) => setTerm(e.target.value)}
+              aria-label="Buscar produtos"
             />
-            <button type="submit" className={styles.mobileSearchBtn}>
-              buscar
+            <button type="submit" className={styles.searchGo} aria-label="Buscar">
+              <Search size={17} strokeWidth={2.4} />
             </button>
           </form>
 
-          <Link href="/loja" className={styles.mobileAll} onClick={() => setMobileOpen(false)}>
-            Ver todos os produtos →
-          </Link>
-
-          <div className={styles.mobileList}>
-            {categories.map((c) => (
-              <Link
-                key={c.id}
-                href={`/${c.slug}`}
-                className={styles.mobileItem}
-                onClick={() => setMobileOpen(false)}
-              >
-                {c.name}
-                <span className={styles.mobileCount}>{c.count}</span>
-              </Link>
-            ))}
-          </div>
-
-          <div className={styles.mobileFooter}>
-            <Link href="/favoritos" className={styles.mobileSecondary} onClick={() => setMobileOpen(false)}>
-              <Heart size={15} /> Favoritos {favoritesCount > 0 && `(${favoritesCount})`}
+          <div className={styles.actions}>
+            <Link href="/favoritos" className={styles.iconBtn} aria-label="Favoritos">
+              <Heart size={20} strokeWidth={1.9} />
+              {favoritesCount > 0 && <span className={styles.badge}>{favoritesCount}</span>}
             </Link>
-            <Link href="/carrinho" className={styles.mobileSecondary} onClick={() => setMobileOpen(false)}>
-              <ShoppingCart size={15} /> Carrinho {cartCount > 0 && `(${cartCount})`}
+            <Link href="/carrinho" className={styles.iconBtn} aria-label="Carrinho">
+              <ShoppingCart size={20} strokeWidth={1.9} />
+              {cartCount > 0 && <span className={styles.badge}>{cartCount}</span>}
             </Link>
           </div>
         </div>
+      </div>
+
+      {/* Busca em linha própria no celular: no topo ela espremia o logo. */}
+      <div className={styles.searchMobileWrap}>
+        <form onSubmit={submitSearch} className={styles.searchMobile}>
+          <Search size={17} strokeWidth={2} className={styles.searchIcon} />
+          <input
+            type="search"
+            inputMode="search"
+            placeholder="O que você procura?"
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+            aria-label="Buscar produtos"
+          />
+        </form>
+      </div>
+
+      <nav className={styles.chipsBar} aria-label="Categorias">
+        <div className={`container ${styles.chipsInner}`}>
+          <div className={`rail ${styles.chips}`}>
+            <Link href="/loja" className={styles.chipStrong}>
+              Todos os produtos
+            </Link>
+            {categories.map((c) => (
+              <Link key={c.id} href={`/${c.slug}`} className={styles.chip}>
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {mobileOpen && (
+        <>
+          <div className={styles.scrim} onClick={() => setMobileOpen(false)} />
+          <div className={styles.drawer} role="dialog" aria-label="Menu">
+            <div className={styles.drawerHead}>
+              <span className={styles.drawerTitle}>Categorias</span>
+              <button
+                className={styles.drawerClose}
+                onClick={() => setMobileOpen(false)}
+                aria-label="Fechar"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <Link href="/loja" className={styles.drawerAll} onClick={() => setMobileOpen(false)}>
+              Ver todos os produtos
+              <ChevronRight size={17} />
+            </Link>
+
+            <div className={styles.drawerList}>
+              {categories.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/${c.slug}`}
+                  className={styles.drawerItem}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span>{c.name}</span>
+                  <span className={styles.drawerCount}>{c.count}</span>
+                </Link>
+              ))}
+            </div>
+
+            <div className={styles.drawerFoot}>
+              <Link href="/favoritos" className="btn btn-outline btn-sm btn-block" onClick={() => setMobileOpen(false)}>
+                <Heart size={15} /> Favoritos{favoritesCount > 0 ? ` (${favoritesCount})` : ''}
+              </Link>
+              <Link href="/carrinho" className="btn btn-primary btn-sm btn-block" onClick={() => setMobileOpen(false)}>
+                <ShoppingCart size={15} /> Carrinho{cartCount > 0 ? ` (${cartCount})` : ''}
+              </Link>
+            </div>
+          </div>
+        </>
       )}
     </header>
   );
