@@ -17,6 +17,8 @@
   max-width: 420px;
   max-height: calc(100dvh - 32px);
   overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
   background: var(--color-white, #fff);
   border-radius: var(--radius-xl, 18px);
   padding: 26px 22px 20px;
@@ -94,7 +96,14 @@
 
 .linha { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-.campo { display: flex; flex-direction: column; gap: 5px; }
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  /* Item de grid tem min-width automatica: sem isto o input nao encolhe e a
+     coluna Sobrenome vaza para fora do modal. */
+  min-width: 0;
+}
 
 .campo span {
   font-size: 0.75rem;
@@ -104,6 +113,9 @@
 }
 
 .campo input {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
   height: 46px;
   padding: 0 12px;
   font-size: 0.95rem;
