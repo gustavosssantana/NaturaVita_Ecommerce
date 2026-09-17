@@ -7,6 +7,7 @@ import CheckoutPage from './pages/CheckoutPage';
 import FavoritesPage from './pages/FavoritesPage';
 import SearchPage from './pages/SearchPage';
 import NotFoundPage from './pages/NotFoundPage';
+import AdminPage from './pages/AdminPage';
 import { parseLocation } from './lib/router';
 import { useCatalog } from './data/CatalogContext';
 
@@ -28,6 +29,10 @@ export default function App() {
 
   // `key` remounts the page when the route parameter changes, which resets its
   // internal state (filters, quantity, gallery) without a reset effect.
+  // O painel do lojista fica fora do site: sem header, sem rodape, e a senha
+  // e conferida no servidor a cada operacao.
+  if (first === 'admin') return <AdminPage />;
+
   if (first === '') return <HomePage />;
   if (first === 'carrinho') return <CartPage />;
   if (first === 'checkout') return <CheckoutPage />;
