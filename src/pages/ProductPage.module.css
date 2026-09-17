@@ -44,6 +44,12 @@
   top: 80px;
 }
 
+/* Produto com uma única foto: não há tira de miniaturas, então o grid vira
+   de uma coluna só. Sem isto a foto herda a coluna de 52px e some. */
+.gallerySingle {
+  grid-template-columns: 1fr;
+}
+
 .thumbStrip {
   display: flex;
   flex-direction: column;

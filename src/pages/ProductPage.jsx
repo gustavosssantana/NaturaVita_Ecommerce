@@ -106,7 +106,12 @@ export default function ProductPage({ productId }) {
           <div className="container">
             <div className={styles.productGrid}>
               {/* ── Gallery ── */}
-              <div className={styles.gallery}>
+              {/* Sem a tira de miniaturas o grid tem um filho só, e ele cairia
+                  na coluna estreita reservada para as miniaturas — a foto
+                  encolhia para 52px. gallerySingle tira essa coluna. */}
+              <div
+                className={`${styles.gallery} ${images.length > 1 ? '' : styles.gallerySingle}`}
+              >
                 {images.length > 1 && (
                   <div className={styles.thumbStrip}>
                     {images.slice(0, 6).map((src, i) => (
