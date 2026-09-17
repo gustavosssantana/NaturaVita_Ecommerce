@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Minus, Plus, Package, Clock, ShieldCheck, Heart, Check, ExternalLink } from 'lucide-react';
+import { Minus, Plus, Package, Clock, ShieldCheck, Heart, Check } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import AnnouncementBar from '../components/layout/AnnouncementBar';
@@ -7,15 +7,17 @@ import StarRating from '../components/ui/StarRating';
 import ProductCard from '../components/ui/ProductCard';
 import CartToast from '../components/ui/CartToast';
 import Link from '../components/ui/Link';
+import BuyModal from '../components/ui/BuyModal';
 import { useCatalog } from '../data/CatalogContext';
 import { useCart } from '../context/CartContext';
 import { useFavorites } from '../context/FavoritesContext';
-import { money, installment, discountPercent, buyUrl } from '../lib/format';
+import { money, installment, discountPercent } from '../lib/format';
 import styles from './ProductPage.module.css';
 
 export default function ProductPage({ productId }) {
-  const { getProduct, categories, products, store, loading } = useCatalog();
+  const { getProduct, categories, products, loading } = useCatalog();
   const { addItem } = useCart();
+  const [comprando, setComprando] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const product = getProduct(productId);
@@ -72,7 +74,6 @@ export default function ProductPage({ productId }) {
   const off = discountPercent(product.price, product.originalPrice);
   const favorited = isFavorite(product.id);
   const images = product.images?.length ? product.images : product.image ? [product.image] : [];
-  const checkoutUrl = buyUrl(store?.url, product);
   const hasVariants = (product.variants?.length || 0) > 1;
 
   function handleAdd() {
@@ -231,15 +232,14 @@ export default function ProductPage({ productId }) {
                   </button>
                 </div>
 
-                {checkoutUrl && product.inStock && (
-                  <a
+                {product.inStock && variant?.id && (
+                  <button
+                    type="button"
                     className={styles.buyNowBtn}
-                    href={checkoutUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    onClick={() => setComprando(true)}
                   >
-                    comprar este item <ExternalLink size={14} />
-                  </a>
+                    comprar este item
+                  </button>
                 )}
 
                 <button

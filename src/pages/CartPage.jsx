@@ -1,13 +1,14 @@
+import { useState } from 'react';
 import { Minus, Plus, X, Package, Clock, ShieldCheck, ShoppingBag } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import AnnouncementBar from '../components/layout/AnnouncementBar';
 import ProductCard from '../components/ui/ProductCard';
 import Link from '../components/ui/Link';
+import BuyModal from '../components/ui/BuyModal';
 import { useCatalog } from '../data/CatalogContext';
 import { useCart, useCartItems } from '../context/CartContext';
 import { money, installment } from '../lib/format';
-import { navigate } from '../lib/router';
 import styles from './CartPage.module.css';
 
 const FRETE_THRESHOLD = 199;
@@ -18,6 +19,7 @@ export default function CartPage() {
   const { products, loading } = useCatalog();
   const { setQty, removeItem } = useCart();
   const items = useCartItems(products);
+  const [comprando, setComprando] = useState(false);
 
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
   const freteLeft = Math.max(0, FRETE_THRESHOLD - subtotal);
@@ -167,7 +169,11 @@ export default function CartPage() {
                     O frete é calculado pelo seu CEP na loja oficial, na hora de fechar o pedido.
                   </p>
 
-                  <button className={styles.ctaBtn} onClick={() => navigate('/checkout')}>
+                  <button
+                    className={styles.ctaBtn}
+                    onClick={() => setComprando(true)}
+                    disabled={!items.length}
+                  >
                     finalizar compra →
                   </button>
 
@@ -208,6 +214,20 @@ export default function CartPage() {
         )}
       </main>
       <Footer />
+
+      {/* O carrinho inteiro vai junto: o modal pede os tres dados que a
+          Nuvemshop exige e devolve o link do checkout ja montado. */}
+      <BuyModal
+        aberto={comprando}
+        aoFechar={() => setComprando(false)}
+        total={subtotal}
+        itens={items.map((i) => ({
+          variantId: i.variant?.id ?? i.variantId,
+          quantity: i.qty,
+          nome: i.product.name,
+          subtotal: i.subtotal,
+        }))}
+      />
     </>
   );
 }

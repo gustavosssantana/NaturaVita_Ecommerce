@@ -215,6 +215,10 @@ export default async function handler(req, res) {
       .filter((p) => {
         if (seen.has(p.id)) return false;
         seen.add(p.id);
+        // O `published=true` da requisição não é respeitado pela API: ela
+        // devolve produto despublicado junto. Sem esta checagem, itens que a
+        // loja tirou da vitrine (por foto errada, por exemplo) reaparecem aqui.
+        if (p.published === false) return false;
         return !isTestEntry(txt(p.name));
       })
       // A product without a category still belongs in /loja — only priceless
