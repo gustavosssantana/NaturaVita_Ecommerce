@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import Link from '../ui/Link';
-import { useCatalog } from '../../data/CatalogContext';
 import styles from './HeroCarousel.module.css';
 
 const INTERVALO = 6000;
@@ -14,7 +13,6 @@ const INTERVALO = 6000;
  * com o próprio catálogo, para a home nunca abrir com um buraco.
  */
 export default function HeroCarousel() {
-  const { products, categories } = useCatalog();
   const [banners, setBanners] = useState([]);
   const [i, setI] = useState(0);
   const [pausado, setPausado] = useState(false);
@@ -25,7 +23,9 @@ export default function HeroCarousel() {
     fetch('/api/banners')
       .then((r) => (r.ok ? r.json() : { banners: [] }))
       .then((d) => {
-        if (vivo && Array.isArray(d.banners)) setBanners(d.banners);
+        if (!vivo || !Array.isArray(d.banners)) return;
+        // Um banner sem nenhuma arte ainda é uma vaga vazia no painel.
+        setBanners(d.banners.filter((b) => b.desktop || b.celular));
       })
       .catch(() => {});
     return () => {
@@ -61,13 +61,19 @@ export default function HeroCarousel() {
     setI((v) => (d < 0 ? (v + 1) % total : (v - 1 + total) % total));
   }
 
-  if (!total) return <CapaPadrao products={products} categories={categories} />;
+  if (!total) return <CapaPadrao />;
+
+  // A arte quadrada é a do celular. Se TODOS os banners tiverem a versão
+  // quadrada, a faixa vira 1:1 no telefone e nada é cortado. Se faltar em
+  // algum, a faixa fica deitada para todos: alturas diferentes na mesma
+  // fileira deixariam um buraco branco a cada troca de banner.
+  const todosComCelular = banners.every((b) => b.celular);
 
   return (
     <section className={styles.wrap} aria-label="Promoções">
       <div className="container">
         <div
-          className={styles.palco}
+          className={`${styles.palco} ${todosComCelular ? styles.palcoQuadrado : ''}`}
           onMouseEnter={() => setPausado(true)}
           onMouseLeave={() => setPausado(false)}
           onTouchStart={inicioToque}
@@ -75,14 +81,22 @@ export default function HeroCarousel() {
         >
           <div className={styles.trilho} style={{ transform: `translateX(-${i * 100}%)` }}>
             {banners.map((b, idx) => {
+              const deitada = b.desktop || b.celular;
+              const quadrada = b.celular || b.desktop;
               const conteudo = (
-                <img
-                  src={b.src}
-                  alt={b.alt || `Promoção ${idx + 1}`}
-                  className={styles.img}
-                  loading={idx === 0 ? 'eager' : 'lazy'}
-                  draggable="false"
-                />
+                /* <picture> deixa o próprio navegador escolher: ele baixa só a
+                   arte que vai usar, então o celular não carrega a imagem
+                   grande do computador à toa. */
+                <picture>
+                  <source media="(max-width: 700px)" srcSet={quadrada} />
+                  <img
+                    src={deitada}
+                    alt={`Promoção ${idx + 1}`}
+                    className={styles.img}
+                    loading={idx === 0 ? 'eager' : 'lazy'}
+                    draggable="false"
+                  />
+                </picture>
               );
               return b.link ? (
                 <Link key={b.id} href={b.link} className={styles.slide}>

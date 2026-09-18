@@ -388,6 +388,7 @@ export default async function handler(req, res) {
       }
 
       // ── banners da home ──────────────────────────────────────────────────
+      // Cada banner é um PAR: arte deitada (computador) e quadrada (celular).
       case 'banners': {
         const portador = await acharPortadorBanners();
         return res.status(200).json({ banners: montarBanners(portador) });
@@ -395,69 +396,116 @@ export default async function handler(req, res) {
 
       case 'banner_adicionar': {
         if (!corpo.foto) return res.status(400).json({ erro: 'Escolha uma imagem.' });
+        const variante = corpo.variante === 'celular' ? 'celular' : 'desktop';
+
         const portador = await garantirPortadorBanners();
-        if ((portador.images || []).length >= 8) {
-          return res.status(400).json({ erro: 'O limite é 8 banners. Remova um antes de subir outro.' });
+        const meta = lerMetaBanners(portador);
+
+        // Sem grupo informado, é banner novo. Com grupo, é a segunda arte
+        // (ou a troca de uma que já existe) de um banner que já está lá.
+        let grupo = limpar(corpo.grupo, 40);
+        if (!grupo) {
+          if (Object.keys(meta.grupos).length >= 8) {
+            return res.status(400).json({ erro: 'O limite é 8 banners. Remova um antes de subir outro.' });
+          }
+          grupo = `g${Date.now().toString(36)}`;
+          const maiorOrdem = Math.max(0, ...Object.values(meta.grupos).map((g) => Number(g.ordem) || 0));
+          meta.grupos[grupo] = { link: limpar(corpo.link, 200), ordem: maiorOrdem + 1 };
+        } else if (!meta.grupos[grupo]) {
+          return res.status(400).json({ erro: 'Banner não encontrado.' });
         }
-        // `false` no último parâmetro: banner NOVO se soma aos que já existem,
-        // ao contrário da foto de produto, que substitui a anterior.
-        await subirFoto(portador.id, corpo.foto, corpo.fotoNome || 'banner', false);
+
+        const antes = (portador.images || []).map((i) => i.id);
+        await subirFoto(portador.id, corpo.foto, `banner-${variante}`, false);
 
         const atualizado = await nuvem(`/products/${portador.id}`);
-        const link = limpar(corpo.link, 200);
-        if (link) {
-          const nova = (atualizado.images || []).slice().sort((a, b) => b.id - a.id)[0];
-          if (nova) await gravarMetaBanner(atualizado, String(nova.id), { link });
-        }
-        const final = link ? await nuvem(`/products/${portador.id}`) : atualizado;
-        return res.status(200).json({ banners: montarBanners(final) });
+        const nova = (atualizado.images || []).find((i) => !antes.includes(i.id));
+        if (!nova) return res.status(500).json({ erro: 'A imagem não subiu. Tente de novo.' });
+
+        // A arte anterior dessa mesma posição sai só depois que a nova entrou.
+        const antiga = Object.entries(meta.imagens).find(
+          ([, d]) => d?.grupo === grupo && d?.variante === variante
+        );
+        meta.imagens[String(nova.id)] = { grupo, variante };
+        if (antiga) delete meta.imagens[antiga[0]];
+
+        await gravarMetaBanners(portador.id, meta);
+        if (antiga) await apagarImagem(portador.id, antiga[0]);
+
+        return res.status(200).json({ banners: montarBanners(await nuvem(`/products/${portador.id}`)) });
       }
 
       case 'banner_remover': {
-        const imagemId = Number(corpo.imagemId);
+        const grupo = limpar(corpo.grupo, 40);
         const portador = await acharPortadorBanners();
-        if (!portador || !imagemId) return res.status(400).json({ erro: 'Banner não encontrado.' });
-        await nuvem(`/products/${portador.id}/images/${imagemId}`, { method: 'DELETE' });
-        await gravarMetaBanner(portador, String(imagemId), null);
-        const final = await nuvem(`/products/${portador.id}`);
-        return res.status(200).json({ banners: montarBanners(final) });
+        if (!portador || !grupo) return res.status(400).json({ erro: 'Banner não encontrado.' });
+
+        const meta = lerMetaBanners(portador);
+        const doGrupo = Object.entries(meta.imagens).filter(([, d]) => d?.grupo === grupo);
+        doGrupo.forEach(([id]) => delete meta.imagens[id]);
+        delete meta.grupos[grupo];
+
+        await gravarMetaBanners(portador.id, meta);
+        for (const [id] of doGrupo) await apagarImagem(portador.id, id);
+
+        return res.status(200).json({ banners: montarBanners(await nuvem(`/products/${portador.id}`)) });
+      }
+
+      case 'banner_remover_arte': {
+        const grupo = limpar(corpo.grupo, 40);
+        const variante = corpo.variante === 'celular' ? 'celular' : 'desktop';
+        const portador = await acharPortadorBanners();
+        if (!portador || !grupo) return res.status(400).json({ erro: 'Banner não encontrado.' });
+
+        const meta = lerMetaBanners(portador);
+        const alvo = Object.entries(meta.imagens).find(
+          ([, d]) => d?.grupo === grupo && d?.variante === variante
+        );
+        if (alvo) {
+          delete meta.imagens[alvo[0]];
+          await gravarMetaBanners(portador.id, meta);
+          await apagarImagem(portador.id, alvo[0]);
+        }
+        return res.status(200).json({ banners: montarBanners(await nuvem(`/products/${portador.id}`)) });
       }
 
       case 'banner_link': {
-        const imagemId = Number(corpo.imagemId);
+        const grupo = limpar(corpo.grupo, 40);
         const portador = await acharPortadorBanners();
-        if (!portador || !imagemId) return res.status(400).json({ erro: 'Banner não encontrado.' });
-        await gravarMetaBanner(portador, String(imagemId), { link: limpar(corpo.link, 200) });
-        const final = await nuvem(`/products/${portador.id}`);
-        return res.status(200).json({ banners: montarBanners(final) });
+        if (!portador || !grupo) return res.status(400).json({ erro: 'Banner não encontrado.' });
+
+        const meta = lerMetaBanners(portador);
+        if (!meta.grupos[grupo]) return res.status(400).json({ erro: 'Banner não encontrado.' });
+        meta.grupos[grupo].link = limpar(corpo.link, 200);
+
+        await gravarMetaBanners(portador.id, meta);
+        return res.status(200).json({ banners: montarBanners(await nuvem(`/products/${portador.id}`)) });
       }
 
       case 'banner_mover': {
-        const imagemId = Number(corpo.imagemId);
+        const grupo = limpar(corpo.grupo, 40);
         const direcao = corpo.direcao === 'baixo' ? 1 : -1;
         const portador = await acharPortadorBanners();
-        if (!portador || !imagemId) return res.status(400).json({ erro: 'Banner não encontrado.' });
+        if (!portador || !grupo) return res.status(400).json({ erro: 'Banner não encontrado.' });
 
-        const ordem = (portador.images || [])
-          .slice()
-          .sort((a, b) => (a.position || 0) - (b.position || 0));
-        const i = ordem.findIndex((img) => img.id === imagemId);
+        const meta = lerMetaBanners(portador);
+        // A ordem vive no JSON, não na posição das imagens: assim as duas
+        // artes de um banner andam juntas, sem risco de se separarem.
+        const ordenados = Object.keys(meta.grupos).sort(
+          (a, b) => (Number(meta.grupos[a].ordem) || 0) - (Number(meta.grupos[b].ordem) || 0)
+        );
+        const i = ordenados.indexOf(grupo);
         const j = i + direcao;
-        if (i < 0 || j < 0 || j >= ordem.length) {
+        if (i < 0 || j < 0 || j >= ordenados.length) {
           return res.status(200).json({ banners: montarBanners(portador) });
         }
-        [ordem[i], ordem[j]] = [ordem[j], ordem[i]];
+        [ordenados[i], ordenados[j]] = [ordenados[j], ordenados[i]];
+        ordenados.forEach((g, k) => { meta.grupos[g].ordem = k + 1; });
 
-        // A Nuvemshop numera posições a partir de 1.
-        for (let k = 0; k < ordem.length; k++) {
-          await nuvem(`/products/${portador.id}/images/${ordem[k].id}`, {
-            method: 'PUT',
-            body: JSON.stringify({ position: k + 1 }),
-          });
-        }
-        const final = await nuvem(`/products/${portador.id}`);
-        return res.status(200).json({ banners: montarBanners(final) });
+        await gravarMetaBanners(portador.id, meta);
+        return res.status(200).json({ banners: montarBanners(await nuvem(`/products/${portador.id}`)) });
       }
+
 
       default:
         return res.status(400).json({ erro: 'Ação desconhecida.' });
@@ -567,42 +615,76 @@ function artesDeCategoria(portador) {
   return saida;
 }
 
-/** Atualiza (ou apaga, com dados = null) o registro de um banner na descrição. */
-async function gravarMetaBanner(portador, imagemId, dados) {
-  let meta = {};
+/** O JSON dos banners guardado na descrição do portador, já normalizado.
+ *  Tolera o formato antigo (uma imagem = um banner, sem par). */
+function lerMetaBanners(portador) {
+  let bruto = {};
   try {
-    const bruto = txt(portador.description).trim();
-    if (bruto.startsWith('{')) meta = JSON.parse(bruto) || {};
+    const t = txt(portador?.description).trim();
+    if (t.startsWith('{')) bruto = JSON.parse(t) || {};
   } catch {
-    meta = {};
+    return { grupos: {}, imagens: {} };
   }
-  if (dados === null) delete meta[imagemId];
-  else meta[imagemId] = { ...(meta[imagemId] || {}), ...dados };
+  if (bruto.grupos && bruto.imagens) {
+    return { grupos: bruto.grupos || {}, imagens: bruto.imagens || {} };
+  }
+  const grupos = {};
+  const imagens = {};
+  Object.entries(bruto).forEach(([idImagem, dados], i) => {
+    if (!dados || typeof dados !== 'object') return;
+    const g = `g${idImagem}`;
+    grupos[g] = { link: typeof dados.link === 'string' ? dados.link : '', ordem: i + 1 };
+    imagens[idImagem] = { grupo: g, variante: 'desktop' };
+  });
+  return { grupos, imagens };
+}
 
-  await nuvem(`/products/${portador.id}`, {
+async function gravarMetaBanners(produtoId, meta) {
+  await nuvem(`/products/${produtoId}`, {
     method: 'PUT',
     body: JSON.stringify({ description: { pt: JSON.stringify(meta) } }),
   });
 }
 
+/** Apagar imagem nunca derruba a operação: o registro já foi gravado. */
+async function apagarImagem(produtoId, imagemId) {
+  try {
+    await nuvem(`/products/${produtoId}/images/${imagemId}`, { method: 'DELETE' });
+  } catch (e) {
+    console.error('não removeu imagem', imagemId, e);
+  }
+}
+
+/** Monta a lista de banners: cada um com a arte de computador e a de celular. */
 function montarBanners(portador) {
   if (!portador) return [];
-  let meta = {};
-  try {
-    const bruto = txt(portador.description).trim();
-    if (bruto.startsWith('{')) meta = JSON.parse(bruto) || {};
-  } catch {
-    meta = {};
-  }
-  return (portador.images || [])
-    .slice()
-    .sort((a, b) => (a.position || 0) - (b.position || 0))
-    .map((img) => ({
-      id: img.id,
-      src: img.src,
-      link: meta[String(img.id)]?.link || '',
+  const { grupos, imagens } = lerMetaBanners(portador);
+
+  const urlPorId = {};
+  (portador.images || []).forEach((i) => {
+    if (i.src) urlPorId[String(i.id)] = i.src;
+  });
+
+  const porGrupo = {};
+  Object.entries(imagens).forEach(([idImagem, dados]) => {
+    const url = urlPorId[idImagem];
+    if (!url || !dados?.grupo) return;
+    const g = (porGrupo[dados.grupo] ||= { id: dados.grupo, desktop: null, celular: null });
+    if (dados.variante === 'celular') g.celular = url;
+    else g.desktop = url;
+  });
+
+  // Um grupo sem imagem nenhuma some da lista, mas continua no JSON até o
+  // lojista removê-lo — é o estado de quem apagou uma arte e vai subir outra.
+  return Object.entries(grupos)
+    .map(([id, g]) => ({
+      id,
+      desktop: porGrupo[id]?.desktop || null,
+      celular: porGrupo[id]?.celular || null,
+      link: typeof g.link === 'string' ? g.link : '',
+      ordem: Number(g.ordem) || 0,
     }))
-    .filter((b) => b.src);
+    .sort((a, b) => a.ordem - b.ordem);
 }
 
 // ── foto ────────────────────────────────────────────────────────────────────

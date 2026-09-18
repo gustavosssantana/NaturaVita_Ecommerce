@@ -4,9 +4,10 @@
    carregar. No desktop ela é 8:3 — exatamente a proporção em que o lojista
    monta a arte (1600 × 600), então ali a imagem aparece inteira.
 
-   No celular a tela é mais estreita e a faixa vira 2:1: o navegador corta as
-   laterais. Por isso a orientação no painel é manter o que importa no miolo
-   da arte — cerca de 75% do centro sobrevive no telefone. */
+   No celular cada banner tem a sua própria arte, quadrada (1:1), e a faixa
+   muda de proporção para recebê-la — assim nada é cortado. Se algum banner
+   estiver sem a versão quadrada, a faixa fica deitada para todos: alturas
+   diferentes na mesma fileira abririam um buraco a cada troca. */
 
 .wrap { padding: 16px 0 6px; }
 
@@ -45,6 +46,8 @@
   object-fit: cover;
   user-select: none;
 }
+/* <picture> é só o invólucro que escolhe a arte; quem desenha é o <img>. */
+.slide picture { display: contents; }
 
 /* ── setas ── */
 .seta {
@@ -121,6 +124,8 @@
 @media (max-width: 900px) {
   .wrap { padding: 12px 0 4px; }
   .slide { padding-bottom: 40%; }   /* 5:2 */
+  /* Todos os banners têm arte quadrada: a faixa acompanha. */
+  .palcoQuadrado .slide { padding-bottom: 100%; }   /* 1:1 */
   .capa { padding: 28px 22px; min-height: 0; }
   .pontos { bottom: 9px; }
 }

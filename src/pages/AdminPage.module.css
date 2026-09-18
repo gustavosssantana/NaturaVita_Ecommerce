@@ -305,23 +305,56 @@
 .check input { width: 20px; height: 20px; accent-color: var(--color-green-accent); }
 
 /* ── banners ── */
+/* Cada banner mostra as duas artes lado a lado: a deitada do computador e a
+   quadrada do celular. Ver as duas juntas é o que deixa óbvio quando falta
+   uma — e faltando a quadrada, o telefone corta o texto da outra. */
 .bannerLista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .bannerItem {
-  position: relative;
   background: #fff; border: 1px solid var(--color-border-soft);
-  border-radius: var(--radius-md); overflow: hidden;
+  border-radius: var(--radius-md); padding: 12px;
 }
+
+.bannerTopo { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
 .bannerOrdem {
-  position: absolute; top: 10px; left: 10px; z-index: 2;
-  padding: 3px 9px; border-radius: var(--radius-full);
-  background: rgba(20,26,19,.72); color: #fff;
-  font-size: .72rem; font-weight: var(--fw-semibold);
+  padding: 3px 10px; border-radius: var(--radius-full);
+  background: var(--color-green-wash); color: var(--color-green-mid);
+  font-size: .74rem; font-weight: var(--fw-semibold);
 }
-.bannerFoto { width: 100%; aspect-ratio: 1280 / 380; object-fit: cover; background: var(--color-cream); }
+.bannerFalta {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: var(--radius-full);
+  background: rgba(200,83,26,.1); color: #9a5f13; font-size: .73rem;
+}
+
+/* stretch + space-between: as duas artes têm alturas diferentes (deitada e
+   quadrada), e sem isso o botão da deitada flutuava no meio da coluna. */
+.bannerArtes { display: grid; grid-template-columns: 1.7fr 1fr; gap: 12px; align-items: stretch; }
+.bannerArte { display: flex; flex-direction: column; justify-content: space-between; gap: 7px; min-width: 0; }
+.bannerArteRotulo { font-size: .78rem; font-weight: var(--fw-semibold); color: var(--color-text-mid); }
+.bannerArteRotulo em { font-style: normal; font-weight: var(--fw-regular); color: var(--color-text-muted); }
+
+.bannerFoto {
+  position: relative; width: 100%; height: 0; padding-bottom: 37.5%;  /* 8:3 */
+  border-radius: var(--radius-sm); overflow: hidden;
+  background: var(--color-cream); border: 1px solid var(--color-border-soft);
+}
+.bannerFotoQuadrada { padding-bottom: 100%; }   /* 1:1 */
+.bannerFoto img {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%; object-fit: cover;
+}
+.bannerVazia {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .76rem; color: var(--color-text-muted);
+}
+
+.bannerArteBotoes { display: flex; gap: 6px; }
+.bannerArteBotoes .btnSecundario { flex: 1; gap: 6px; }
 
 .bannerAcoes {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding: 11px 12px; border-top: 1px solid var(--color-border-soft);
+  margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--color-border-soft);
 }
 .bannerLink {
   flex: 1; min-width: 210px;
@@ -352,30 +385,6 @@
 .bannerIcone:hover:not(:disabled) { border-color: var(--color-green-mid); color: var(--color-green-mid); }
 .bannerIcone:disabled { opacity: .4; cursor: default; }
 .bannerRemover:hover:not(:disabled) { border-color: #c0432a; color: #c0432a; }
-
-.girando { animation: rodar .9s linear infinite; }
-@keyframes rodar { to { transform: rotate(360deg); } }
-
-/* ── celular ── */
-@media (max-width: 680px) {
-  .container { width: min(920px, 100% - 24px); }
-  .barraInterna { width: min(920px, 100% - 24px); gap: 8px; }
-  .barraLink { padding: 0 11px; font-size: .82rem; }
-  .barraMarca span { display: none; }
-  .linha3 { grid-template-columns: 1fr; }
-  .topo > .btnPrincipal { width: 100%; }
-  .item { grid-template-columns: 50px 1fr; row-gap: 9px; }
-  .itemFoto { width: 50px; height: 50px; }
-  .itemTags { grid-column: 1 / -1; justify-self: start; gap: 6px; }
-  .item > .btnSecundario { grid-column: 1 / -1; width: 100%; }
-  .fotoPreview { width: 100%; height: 200px; }
-  .btnFoto { width: 100%; }
-  .barraSalvar > * { width: 100%; }
-  .bannerBotoes { width: 100%; }
-  .bannerIcone { flex: 1; }
-}
-
-@media (prefers-reduced-motion: reduce) { .girando { animation: none; } }
 
 /* ── artes das categorias ── */
 .catLista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }

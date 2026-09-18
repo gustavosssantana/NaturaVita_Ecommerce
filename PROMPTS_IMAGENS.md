@@ -5,9 +5,10 @@ Dois tipos de imagem, com tamanhos diferentes:
 | O quê | Tamanho | Onde aparece |
 |---|---|---|
 | **Arte de categoria** | **800 × 800** (quadrada) | Os círculos de "Comprar por categoria" na home |
-| **Banner de promoção** | **1600 × 600** (deitada) | A faixa que gira no topo da home |
+| **Banner — computador** | **1600 × 600** (deitada, 8:3) | A faixa do topo da home, em tela grande |
+| **Banner — celular** | **1080 × 1080** (quadrada) | A mesma faixa, no telefone |
 
-No banner, o computador mostra a imagem inteira. **O celular corta as laterais** — sobra cerca de 75% do centro. Então tudo que importa (produto, texto, preço) fica no miolo.
+Cada banner é um **par**: a arte deitada e a quadrada da mesma promoção. O site escolhe sozinho qual mostrar, e por isso **nenhuma das duas é cortada** — nem no computador, nem no telefone. Se faltar a quadrada, o telefone corta as laterais da deitada, e é justamente onde costuma estar o texto.
 
 ---
 

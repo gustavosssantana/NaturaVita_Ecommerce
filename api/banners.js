@@ -1,15 +1,20 @@
 // Vercel Serverless Function — banners da home.
 //
 // Onde as imagens ficam guardadas: não existe banco de dados neste projeto,
-// e criar um só para cinco fotos seria mais infraestrutura para o lojista
+// e criar um só para dez fotos seria mais infraestrutura para o lojista
 // manter. Então os banners moram na própria Nuvemshop, como as imagens de um
 // produto escondido chamado __BANNERS__ (nunca publicado, nunca vendido).
 //
-// Vantagem prática: o upload usa a mesma rota de imagem que o painel já usa,
-// as fotos ficam no CDN da Nuvemshop e nada disso depende de outro serviço.
+// Cada banner é um PAR de artes: uma deitada (8:3, para o computador) e uma
+// quadrada (1:1, para o celular). Sem o par, a arte deitada teria as laterais
+// cortadas no telefone e o texto sumiria junto.
 //
-// O link de cada banner fica na descrição desse produto, como JSON:
-//   { "<id da imagem>": { "link": "/vitaminas" } }
+// A ligação entre as duas artes fica na descrição do produto, em JSON:
+//   {
+//     "grupos":  { "g1": { "link": "/vitaminas", "ordem": 1 } },
+//     "imagens": { "12345": { "grupo": "g1", "variante": "desktop" },
+//                  "12346": { "grupo": "g1", "variante": "celular" } }
+//   }
 
 const FALLBACK_STORE_ID = '8240607';
 const FALLBACK_USER_AGENT = 'NaturaVita (naturavita.loja@gmail.com)';
@@ -64,35 +69,65 @@ export async function acharPortador() {
   return null;
 }
 
-/** Lê o mapa de links guardado na descrição do portador. */
+/**
+ * Lê o JSON da descrição do portador, já normalizado.
+ *
+ * Tolera o formato antigo (um banner por imagem, sem par) para o caso de
+ * alguém ter subido algo antes desta mudança: cada imagem solta vira um
+ * grupo próprio, com a arte no lugar da versão de computador.
+ */
 export function lerMeta(produto) {
+  let bruto = {};
   try {
-    const bruto = txt(produto?.description, '').trim();
-    if (!bruto.startsWith('{')) return {};
-    const obj = JSON.parse(bruto);
-    return obj && typeof obj === 'object' ? obj : {};
+    const s = txt(produto?.description, '').trim();
+    if (s.startsWith('{')) bruto = JSON.parse(s) || {};
   } catch {
-    return {};
+    return { grupos: {}, imagens: {} };
   }
+
+  if (bruto.grupos && bruto.imagens) {
+    return { grupos: bruto.grupos || {}, imagens: bruto.imagens || {} };
+  }
+
+  const grupos = {};
+  const imagens = {};
+  Object.entries(bruto).forEach(([idImagem, dados], i) => {
+    if (!dados || typeof dados !== 'object') return;
+    const g = `g${idImagem}`;
+    grupos[g] = { link: typeof dados.link === 'string' ? dados.link : '', ordem: i + 1 };
+    imagens[idImagem] = { grupo: g, variante: 'desktop' };
+  });
+  return { grupos, imagens };
 }
 
 /** Converte o produto portador na lista que a home consome. */
 export function montarBanners(produto) {
   if (!produto) return [];
-  const meta = lerMeta(produto);
-  return (produto.images || [])
-    .slice()
-    .sort((a, b) => (a.position || 0) - (b.position || 0))
-    .map((img) => {
-      const extra = meta[String(img.id)] || {};
-      return {
-        id: img.id,
-        src: img.src,
-        link: typeof extra.link === 'string' && extra.link ? extra.link : null,
-        alt: typeof extra.alt === 'string' ? extra.alt : '',
-      };
-    })
-    .filter((b) => b.src);
+  const { grupos, imagens } = lerMeta(produto);
+
+  const urlPorId = {};
+  (produto.images || []).forEach((img) => {
+    if (img.src) urlPorId[String(img.id)] = img.src;
+  });
+
+  const porGrupo = {};
+  Object.entries(imagens).forEach(([idImagem, dados]) => {
+    const url = urlPorId[idImagem];
+    if (!url || !dados?.grupo) return;
+    const g = (porGrupo[dados.grupo] ||= { id: dados.grupo, desktop: null, celular: null });
+    if (dados.variante === 'celular') g.celular = url;
+    else g.desktop = url;
+  });
+
+  return Object.values(porGrupo)
+    .map((g) => ({
+      ...g,
+      link: typeof grupos[g.id]?.link === 'string' ? grupos[g.id].link : '',
+      ordem: Number(grupos[g.id]?.ordem) || 0,
+    }))
+    // Um grupo sem nenhuma das duas artes não tem o que mostrar.
+    .filter((g) => g.desktop || g.celular)
+    .sort((a, b) => a.ordem - b.ordem);
 }
 
 let cache = null;

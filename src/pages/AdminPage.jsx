@@ -581,8 +581,13 @@ function BarraTopo({ secao, setSecao, sair, compacto = false }) {
 }
 
 /**
- * Banners da home. São as imagens de promoção que giram no topo da loja.
- * O máximo é 8 — mais que isso e o visitante nunca chega a ver o último.
+ * Banners da home.
+ *
+ * Cada banner é um PAR de artes: uma deitada para o computador (8:3) e uma
+ * quadrada para o celular (1:1). O par existe porque a arte deitada, num
+ * telefone, perde as laterais — e é justamente onde costuma estar o texto.
+ *
+ * O banner só entra na roda da loja quando tem pelo menos uma das duas.
  */
 function PainelBanners({ chamar }) {
   const [banners, setBanners] = useState([]);
@@ -591,15 +596,19 @@ function PainelBanners({ chamar }) {
   const [erro, setErro] = useState(null);
   const [aviso, setAviso] = useState(null);
   const [links, setLinks] = useState({});
-  const entradaRef = useRef(null);
+  const entradas = useRef({});
+
+  function aplicar(r) {
+    const lista = r.banners || [];
+    setBanners(lista);
+    setLinks(Object.fromEntries(lista.map((b) => [b.id, b.link || ''])));
+  }
 
   const recarregar = useCallback(async () => {
     setCarregando(true);
     setErro(null);
     try {
-      const r = await chamar('banners');
-      setBanners(r.banners || []);
-      setLinks(Object.fromEntries((r.banners || []).map((b) => [b.id, b.link || ''])));
+      aplicar(await chamar('banners'));
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -609,12 +618,7 @@ function PainelBanners({ chamar }) {
 
   useEffect(() => { recarregar(); }, [recarregar]);
 
-  function aplicar(r) {
-    setBanners(r.banners || []);
-    setLinks(Object.fromEntries((r.banners || []).map((b) => [b.id, b.link || ''])));
-  }
-
-  async function subir(e) {
+  function subir(e, variante, grupo) {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
@@ -628,8 +632,12 @@ function PainelBanners({ chamar }) {
     leitor.onload = async () => {
       setOcupado(true);
       try {
-        aplicar(await chamar('banner_adicionar', { foto: leitor.result, fotoNome: f.name }));
-        setAviso('Banner publicado. Ele aparece na home em até um minuto.');
+        aplicar(await chamar('banner_adicionar', { foto: leitor.result, variante, grupo }));
+        setAviso(
+          grupo
+            ? 'Arte salva. A loja atualiza em até um minuto.'
+            : 'Banner criado. Agora suba a arte do celular nele.'
+        );
       } catch (err) {
         setErro(err.message);
       } finally {
@@ -653,26 +661,29 @@ function PainelBanners({ chamar }) {
     }
   }
 
+  const completos = banners.filter((b) => b.desktop && b.celular).length;
+
   return (
     <>
       <div className={styles.topo}>
         <div>
           <h1 className={styles.titulo}>Banners da home</h1>
           <p className={styles.subtitulo}>
-            As imagens de promoção que giram no topo da loja. {banners.length} de 8.
+            {banners.length} de 8 · {completos} com as duas artes
           </p>
         </div>
         <button
           type="button" className={styles.btnPrincipal}
-          onClick={() => entradaRef.current?.click()}
+          onClick={() => entradas.current.novo?.click()}
           disabled={ocupado || banners.length >= 8}
         >
           {ocupado ? <Loader2 size={16} className={styles.girando} /> : <Plus size={17} />}
-          subir imagem
+          novo banner
         </button>
         <input
-          ref={entradaRef} type="file" accept="image/jpeg,image/png,image/webp"
-          onChange={subir} hidden
+          ref={(el) => { entradas.current.novo = el; }}
+          type="file" accept="image/jpeg,image/png,image/webp"
+          onChange={(e) => subir(e, 'desktop', '')} hidden
         />
       </div>
 
@@ -682,9 +693,9 @@ function PainelBanners({ chamar }) {
       <p className={styles.destaque}>
         <ImageIcon size={15} />
         <span>
-          Use imagens deitadas de <strong>1600 × 600 pixels</strong>. No computador ela
-          aparece inteira; no celular as laterais são cortadas, então deixe o texto e o
-          produto no <strong>miolo da arte</strong>.
+          Cada banner usa duas artes: <strong>deitada 1600 × 600</strong> no computador e{' '}
+          <strong>quadrada 1080 × 1080</strong> no celular. Sem a quadrada, o telefone corta as
+          laterais da deitada — junto com o texto.
         </span>
       </p>
 
@@ -700,22 +711,75 @@ function PainelBanners({ chamar }) {
       <ul className={styles.bannerLista}>
         {banners.map((b, i) => (
           <li key={b.id} className={styles.bannerItem}>
-            <span className={styles.bannerOrdem}>{i + 1}º</span>
-            <img src={b.src} alt="" className={styles.bannerFoto} />
+            <div className={styles.bannerTopo}>
+              <span className={styles.bannerOrdem}>{i + 1}º</span>
+              {!b.desktop || !b.celular ? (
+                <span className={styles.bannerFalta}>
+                  <AlertCircle size={12} /> falta a arte {b.desktop ? 'do celular' : 'do computador'}
+                </span>
+              ) : null}
+            </div>
+
+            <div className={styles.bannerArtes}>
+              {[
+                ['desktop', 'Computador', '1600 × 600', b.desktop],
+                ['celular', 'Celular', '1080 × 1080', b.celular],
+              ].map(([variante, rotulo, medida, url]) => (
+                <div key={variante} className={styles.bannerArte}>
+                  <span className={styles.bannerArteRotulo}>
+                    {rotulo} <em>{medida}</em>
+                  </span>
+                  <div
+                    className={`${styles.bannerFoto} ${
+                      variante === 'celular' ? styles.bannerFotoQuadrada : ''
+                    }`}
+                  >
+                    {url ? (
+                      <img src={url} alt="" loading="lazy" />
+                    ) : (
+                      <span className={styles.bannerVazia}>sem arte</span>
+                    )}
+                  </div>
+                  <div className={styles.bannerArteBotoes}>
+                    <button
+                      type="button" className={styles.btnSecundario}
+                      onClick={() => entradas.current[`${b.id}-${variante}`]?.click()}
+                      disabled={ocupado}
+                    >
+                      <Camera size={14} /> {url ? 'trocar' : 'subir'}
+                    </button>
+                    {url && (
+                      <button
+                        type="button" className={`${styles.bannerIcone} ${styles.bannerRemover}`}
+                        title="Remover esta arte" disabled={ocupado}
+                        onClick={() => operar('banner_remover_arte', { grupo: b.id, variante })}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
+                    <input
+                      ref={(el) => { entradas.current[`${b.id}-${variante}`] = el; }}
+                      type="file" accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => subir(e, variante, b.id)} hidden
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
 
             <div className={styles.bannerAcoes}>
               <label className={styles.bannerLink}>
                 <Link2 size={14} />
                 <input
                   value={links[b.id] ?? ''}
-                  placeholder="para onde leva ao clicar (ex.: /vitaminas)"
+                  placeholder="para onde leva ao clicar (ex.: /colageno)"
                   onChange={(ev) => setLinks((s) => ({ ...s, [b.id]: ev.target.value }))}
                   disabled={ocupado}
                 />
                 {(links[b.id] ?? '') !== (b.link || '') && (
                   <button
                     type="button" className={styles.bannerSalvar}
-                    onClick={() => operar('banner_link', { imagemId: b.id, link: links[b.id] }, 'Link salvo.')}
+                    onClick={() => operar('banner_link', { grupo: b.id, link: links[b.id] }, 'Link salvo.')}
                     disabled={ocupado}
                   >
                     salvar
@@ -727,21 +791,21 @@ function PainelBanners({ chamar }) {
                 <button
                   type="button" className={styles.bannerIcone} title="Subir na ordem"
                   disabled={ocupado || i === 0}
-                  onClick={() => operar('banner_mover', { imagemId: b.id, direcao: 'cima' })}
+                  onClick={() => operar('banner_mover', { grupo: b.id, direcao: 'cima' })}
                 >
                   <ChevronUp size={16} />
                 </button>
                 <button
                   type="button" className={styles.bannerIcone} title="Descer na ordem"
                   disabled={ocupado || i === banners.length - 1}
-                  onClick={() => operar('banner_mover', { imagemId: b.id, direcao: 'baixo' })}
+                  onClick={() => operar('banner_mover', { grupo: b.id, direcao: 'baixo' })}
                 >
                   <ChevronDown size={16} />
                 </button>
                 <button
                   type="button" className={`${styles.bannerIcone} ${styles.bannerRemover}`}
-                  title="Remover banner" disabled={ocupado}
-                  onClick={() => operar('banner_remover', { imagemId: b.id }, 'Banner removido.')}
+                  title="Remover o banner inteiro" disabled={ocupado}
+                  onClick={() => operar('banner_remover', { grupo: b.id }, 'Banner removido.')}
                 >
                   <Trash2 size={16} />
                 </button>
