@@ -21,21 +21,43 @@
 }
 
 /* ── foto ── */
+
+/* O quadrado da foto é feito com `padding-bottom: 100%`, não com
+   `aspect-ratio`, e a imagem é posicionada de forma absoluta dentro dele.
+
+   Motivo: no Safari do iPhone a combinação `aspect-ratio` + altura em
+   porcentagem sai errada — a foto voltava ao tamanho natural, saía do centro
+   para a direita e era cortada. No Chrome isso não aparecia, então o defeito
+   só existia no telefone do cliente.
+
+   Este par (caixa com altura vinda de padding + filho absoluto) é o jeito
+   antigo e chato, e é o único que se comporta igual nos dois navegadores.
+   As medidas são `calc`, nunca `auto`: `width: auto` num elemento absoluto
+   com left e right definidos NÃO estica imagem — imagem é elemento
+   substituído e mantém o tamanho natural. Foi assim que eu errei da
+   primeira vez. */
 .media {
   position: relative;
-  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: 0;
+  padding-bottom: 100%;
   background: #fff;
-  display: flex; align-items: center; justify-content: center;
-  padding: 12px;
+  overflow: hidden;
   border-bottom: 1px solid var(--color-border-soft);
 }
 .image {
-  width: 100%; height: 100%;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: calc(100% - 24px);
+  height: calc(100% - 24px);
   object-fit: contain;
   transition: transform .3s ease;
 }
 .card:hover .image { transform: scale(1.04); }
 .noImage {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
   font-size: .72rem; letter-spacing: .06em; text-transform: uppercase;
   color: var(--color-text-muted);
 }

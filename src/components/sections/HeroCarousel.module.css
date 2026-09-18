@@ -26,12 +26,25 @@
 }
 
 .slide {
+  position: relative;
   flex: 0 0 100%;
-  display: block;
-  aspect-ratio: 8 / 3;
+  width: 100%;
+  height: 0;
+  padding-bottom: 37.5%;   /* 8:3 — mesma proporção da arte, 1600 x 600 */
   background: var(--color-cream);
+  overflow: hidden;
 }
-.img { width: 100%; height: 100%; object-fit: cover; user-select: none; }
+/* Absoluto e com medidas em calc, pelo mesmo motivo do cartão de produto:
+   no Safari do iPhone, altura em porcentagem dentro de `aspect-ratio` sai
+   errada. */
+.img {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
 
 /* ── setas ── */
 .seta {
@@ -107,13 +120,13 @@
 
 @media (max-width: 900px) {
   .wrap { padding: 12px 0 4px; }
-  .slide { aspect-ratio: 5 / 2; }
+  .slide { padding-bottom: 40%; }   /* 5:2 */
   .capa { padding: 28px 22px; min-height: 0; }
   .pontos { bottom: 9px; }
 }
 
 @media (max-width: 480px) {
-  .slide { aspect-ratio: 2 / 1; }
+  .slide { padding-bottom: 50%; }   /* 2:1 */
   .palco { border-radius: var(--radius-md); }
   .capa { border-radius: var(--radius-md); }
   .capaBtn { width: 100%; }
