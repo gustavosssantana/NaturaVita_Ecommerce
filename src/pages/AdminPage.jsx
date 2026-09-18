@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Lock, Search, Plus, ArrowLeft, Camera, Loader2, Check, AlertCircle, Eye, EyeOff,
   Package, Image as ImageIcon, Boxes, Trash2, ChevronUp, ChevronDown, Link2, LogOut,
-  Leaf,
+  Leaf, LayoutGrid,
 } from 'lucide-react';
 import { money } from '../lib/format';
 import styles from './AdminPage.module.css';
@@ -26,7 +26,7 @@ export default function AdminPage() {
   const [erro, setErro] = useState(null);
   const [ocupado, setOcupado] = useState(false);
 
-  const [secao, setSecao] = useState('produtos'); // produtos | banners
+  const [secao, setSecao] = useState('produtos'); // produtos | banners | categorias
 
   const [produtos, setProdutos] = useState([]);
   const [busca, setBusca] = useState('');
@@ -393,6 +393,18 @@ export default function AdminPage() {
     );
   }
 
+  // ── artes das categorias ──────────────────────────────────────────────────
+  if (secao === 'categorias') {
+    return (
+      <main className={styles.wrap}>
+        <BarraTopo secao={secao} setSecao={setSecao} sair={sair} />
+        <div className={styles.container}>
+          <PainelCategorias chamar={chamar} />
+        </div>
+      </main>
+    );
+  }
+
   // ── lista ─────────────────────────────────────────────────────────────────
   return (
     <main className={styles.wrap}>
@@ -550,6 +562,13 @@ function BarraTopo({ secao, setSecao, sair, compacto = false }) {
             >
               <ImageIcon size={15} /> Banners
             </button>
+            <button
+              type="button"
+              className={`${styles.barraLink} ${secao === 'categorias' ? styles.barraLinkOn : ''}`}
+              onClick={() => setSecao('categorias')}
+            >
+              <LayoutGrid size={15} /> Categorias
+            </button>
           </nav>
         )}
 
@@ -663,8 +682,9 @@ function PainelBanners({ chamar }) {
       <p className={styles.destaque}>
         <ImageIcon size={15} />
         <span>
-          Use imagens deitadas, de <strong>1400 × 480 pixels</strong> ou parecido. O texto
-          importante deve ficar no meio: no celular as bordas são cortadas.
+          Use imagens deitadas de <strong>1600 × 600 pixels</strong>. No computador ela
+          aparece inteira; no celular as laterais são cortadas, então deixe o texto e o
+          produto no <strong>miolo da arte</strong>.
         </span>
       </p>
 
@@ -726,6 +746,149 @@ function PainelBanners({ chamar }) {
                   <Trash2 size={16} />
                 </button>
               </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+/**
+ * Artes das categorias — os quadradinhos de "Comprar por categoria" na home.
+ *
+ * Sem arte própria, a home usa a foto do primeiro produto da categoria que
+ * tiver imagem. Funciona, mas é aleatório: uma categoria inteira acaba
+ * representada por um pote qualquer.
+ */
+function PainelCategorias({ chamar }) {
+  const [lista, setLista] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [ocupado, setOcupado] = useState(null); // slug em processamento
+  const [erro, setErro] = useState(null);
+  const [aviso, setAviso] = useState(null);
+  const entradas = useRef({});
+
+  const recarregar = useCallback(async () => {
+    setCarregando(true);
+    setErro(null);
+    try {
+      const r = await chamar('categorias');
+      setLista(r.categorias || []);
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setCarregando(false);
+    }
+  }, [chamar]);
+
+  useEffect(() => { recarregar(); }, [recarregar]);
+
+  function escolher(slug, e) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    if (f.size > 9 * 1024 * 1024) {
+      setErro('A imagem é grande demais (máximo 9 MB).');
+      return;
+    }
+    setErro(null);
+    setAviso(null);
+    const leitor = new FileReader();
+    leitor.onload = async () => {
+      setOcupado(slug);
+      try {
+        const r = await chamar('categoria_imagem', { slug, foto: leitor.result });
+        setLista((atual) => atual.map((c) => (c.slug === slug ? { ...c, imagem: r.imagem } : c)));
+        setAviso('Arte salva. A home atualiza em até 10 minutos.');
+      } catch (err) {
+        setErro(err.message);
+      } finally {
+        setOcupado(null);
+      }
+    };
+    leitor.readAsDataURL(f);
+  }
+
+  async function remover(slug) {
+    setOcupado(slug);
+    setErro(null);
+    setAviso(null);
+    try {
+      await chamar('categoria_imagem_remover', { slug });
+      setLista((atual) => atual.map((c) => (c.slug === slug ? { ...c, imagem: null } : c)));
+      setAviso('Arte removida. A categoria volta a usar a foto de um produto.');
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setOcupado(null);
+    }
+  }
+
+  return (
+    <>
+      <div className={styles.topo}>
+        <div>
+          <h1 className={styles.titulo}>Artes das categorias</h1>
+          <p className={styles.subtitulo}>
+            A imagem de cada categoria na home. {lista.filter((c) => c.imagem).length} de{' '}
+            {lista.length} com arte própria.
+          </p>
+        </div>
+      </div>
+
+      {aviso && <p className={styles.ok}><Check size={14} /> {aviso}</p>}
+      {erro && <p className={styles.erro} role="alert"><AlertCircle size={14} /> {erro}</p>}
+
+      <p className={styles.destaque}>
+        <LayoutGrid size={15} />
+        <span>
+          Imagens <strong>quadradas, 800 × 800</strong>, fundo claro e uniforme. Sem arte, a
+          categoria usa a foto de um produto qualquer dela.
+        </span>
+      </p>
+
+      {carregando && <p className={styles.estado}>carregando…</p>}
+
+      <ul className={styles.catLista}>
+        {lista.map((c) => (
+          <li key={c.id} className={styles.catItem}>
+            <div className={styles.catFoto}>
+              {c.imagem ? <img src={c.imagem} alt="" loading="lazy" /> : <ImageIcon size={20} />}
+            </div>
+            <div className={styles.catInfo}>
+              <p className={styles.catNome}>{c.nome}</p>
+              <p className={styles.catEstado}>
+                {c.imagem ? 'arte própria' : 'usando foto de produto'}
+              </p>
+            </div>
+            <div className={styles.catAcoes}>
+              <button
+                type="button" className={styles.btnSecundario}
+                onClick={() => entradas.current[c.slug]?.click()}
+                disabled={ocupado === c.slug}
+              >
+                {ocupado === c.slug ? (
+                  <Loader2 size={14} className={styles.girando} />
+                ) : (
+                  <Camera size={14} />
+                )}
+                {c.imagem ? 'trocar' : 'subir'}
+              </button>
+              {c.imagem && (
+                <button
+                  type="button" className={`${styles.bannerIcone} ${styles.bannerRemover}`}
+                  onClick={() => remover(c.slug)} disabled={ocupado === c.slug}
+                  title="Remover arte"
+                >
+                  <Trash2 size={15} />
+                </button>
+              )}
+              <input
+                ref={(el) => { entradas.current[c.slug] = el; }}
+                type="file" accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => escolher(c.slug, e)} hidden
+              />
             </div>
           </li>
         ))}

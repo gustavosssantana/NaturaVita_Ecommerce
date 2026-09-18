@@ -56,6 +56,22 @@ function limpar(v, max) {
 const NOME_BANNERS = '__BANNERS__';
 const ehPortadorDeBanner = (p) => txt(p.name).trim() === NOME_BANNERS;
 
+// E este guarda as artes das categorias, no mesmo esquema.
+const NOME_CATEGORIAS = '__CATEGORIAS__';
+const ehPortadorDeCategoria = (p) => txt(p.name).trim() === NOME_CATEGORIAS;
+
+const ehPortador = (p) => ehPortadorDeBanner(p) || ehPortadorDeCategoria(p);
+
+function slugificar(nome) {
+  return String(nome || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 function mapear(p) {
   const v = (p.variants || [])[0] || {};
   return {
@@ -150,9 +166,75 @@ export default async function handler(req, res) {
 
       case 'categorias': {
         const cats = await nuvem('/categories?per_page=200');
+        // A arte de cada categoria, quando o lojista já subiu uma.
+        const artes = artesDeCategoria(await acharPortadorCategorias());
         return res.status(200).json({
-          categorias: cats.map((c) => ({ id: c.id, nome: txt(c.name) })),
+          categorias: cats.map((c) => {
+            const nome = txt(c.name);
+            const slug = slugificar(nome);
+            return { id: c.id, nome, slug, imagem: artes[slug] || null };
+          }),
         });
+      }
+
+      case 'categoria_imagem': {
+        const slug = slugificar(corpo.slug);
+        if (!slug) return res.status(400).json({ erro: 'Categoria não informada.' });
+        if (!corpo.foto) return res.status(400).json({ erro: 'Escolha uma imagem.' });
+
+        const portador = await garantirPortadorCategorias();
+        // Se essa categoria já tinha arte, a antiga sai depois que a nova entra.
+        const antes = (portador.images || []).map((i) => i.id);
+
+        await subirFoto(portador.id, corpo.foto, `categoria-${slug}`, false);
+
+        const atualizado = await nuvem(`/products/${portador.id}`);
+        const nova = (atualizado.images || []).find((i) => !antes.includes(i.id));
+        if (!nova) return res.status(500).json({ erro: 'A imagem não subiu. Tente de novo.' });
+
+        const meta = lerMetaPortador(atualizado);
+        const anterior = Object.entries(meta).find(([, v]) => (typeof v === 'string' ? v : v?.slug) === slug);
+        meta[String(nova.id)] = { slug };
+        if (anterior) delete meta[anterior[0]];
+
+        await nuvem(`/products/${portador.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ description: { pt: JSON.stringify(meta) } }),
+        });
+
+        if (anterior) {
+          try {
+            await nuvem(`/products/${portador.id}/images/${anterior[0]}`, { method: 'DELETE' });
+          } catch (e) {
+            console.error('não removeu arte antiga da categoria', anterior[0], e);
+          }
+        }
+
+        invalidarCache();
+        return res.status(200).json({ slug, imagem: nova.src });
+      }
+
+      case 'categoria_imagem_remover': {
+        const slug = slugificar(corpo.slug);
+        const portador = await acharPortadorCategorias();
+        if (!portador || !slug) return res.status(400).json({ erro: 'Categoria não encontrada.' });
+
+        const meta = lerMetaPortador(portador);
+        const alvo = Object.entries(meta).find(([, v]) => (typeof v === 'string' ? v : v?.slug) === slug);
+        if (!alvo) return res.status(200).json({ slug, imagem: null });
+
+        delete meta[alvo[0]];
+        await nuvem(`/products/${portador.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ description: { pt: JSON.stringify(meta) } }),
+        });
+        try {
+          await nuvem(`/products/${portador.id}/images/${alvo[0]}`, { method: 'DELETE' });
+        } catch (e) {
+          console.error('não removeu arte da categoria', alvo[0], e);
+        }
+        invalidarCache();
+        return res.status(200).json({ slug, imagem: null });
       }
 
       case 'listar': {
@@ -161,7 +243,7 @@ export default async function handler(req, res) {
         const pagina = Math.max(1, Number(corpo.pagina) || 1);
         const porPagina = 30;
 
-        let lista = (await todosOsProdutos()).filter((p) => !ehPortadorDeBanner(p)).map(mapear);
+        let lista = (await todosOsProdutos()).filter((p) => !ehPortador(p)).map(mapear);
 
         const totais = {
           todos: lista.length,
@@ -426,6 +508,63 @@ async function garantirPortadorBanners() {
   });
   invalidarCache();
   return criado;
+}
+
+// ── artes das categorias ────────────────────────────────────────────────────
+
+async function acharPortadorCategorias() {
+  try {
+    const achados = await nuvem('/products?q=CATEGORIAS&per_page=50');
+    const p = (achados || []).find(ehPortadorDeCategoria);
+    if (p) return p;
+  } catch {
+    // a busca por texto às vezes engasga com sublinhado; varremos abaixo
+  }
+  const todos = await todosOsProdutos();
+  return todos.find(ehPortadorDeCategoria) || null;
+}
+
+async function garantirPortadorCategorias() {
+  const existente = await acharPortadorCategorias();
+  if (existente) return existente;
+  const criado = await nuvem('/products', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: { pt: NOME_CATEGORIAS },
+      description: { pt: '{}' },
+      published: false,
+      variants: [{ price: '0.01', stock: 0 }],
+    }),
+  });
+  invalidarCache();
+  return criado;
+}
+
+/** O JSON guardado na descrição de um produto portador. */
+function lerMetaPortador(portador) {
+  try {
+    const bruto = txt(portador?.description).trim();
+    if (bruto.startsWith('{')) return JSON.parse(bruto) || {};
+  } catch {
+    return {};
+  }
+  return {};
+}
+
+/** { slug: url } a partir do portador das categorias. */
+function artesDeCategoria(portador) {
+  if (!portador) return {};
+  const meta = lerMetaPortador(portador);
+  const porId = {};
+  (portador.images || []).forEach((i) => {
+    if (i.src) porId[String(i.id)] = i.src;
+  });
+  const saida = {};
+  Object.entries(meta).forEach(([id, v]) => {
+    const slug = typeof v === 'string' ? v : v?.slug;
+    if (slug && porId[id]) saida[slug] = porId[id];
+  });
+  return saida;
 }
 
 /** Atualiza (ou apaga, com dados = null) o registro de um banner na descrição. */

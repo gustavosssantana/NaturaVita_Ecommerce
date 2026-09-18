@@ -376,3 +376,31 @@
 }
 
 @media (prefers-reduced-motion: reduce) { .girando { animation: none; } }
+
+/* ── artes das categorias ── */
+.catLista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.catItem {
+  display: grid; grid-template-columns: 62px 1fr auto;
+  align-items: center; gap: 13px;
+  background: #fff; padding: 11px 13px;
+  border: 1px solid var(--color-border-soft); border-radius: var(--radius-md);
+}
+.catFoto {
+  width: 62px; height: 62px; border-radius: var(--radius-sm); overflow: hidden;
+  background: var(--color-cream);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-muted);
+}
+.catFoto img { width: 100%; height: 100%; object-fit: cover; }
+.catInfo { min-width: 0; }
+.catNome { margin: 0 0 2px; font-size: .92rem; font-weight: var(--fw-semibold); line-height: 1.3; }
+.catEstado { margin: 0; font-size: .77rem; color: var(--color-text-muted); }
+.catAcoes { display: flex; align-items: center; gap: 7px; }
+.catAcoes .btnSecundario { gap: 7px; }
+
+@media (max-width: 680px) {
+  .catItem { grid-template-columns: 54px 1fr; row-gap: 10px; }
+  .catFoto { width: 54px; height: 54px; }
+  .catAcoes { grid-column: 1 / -1; }
+  .catAcoes .btnSecundario { flex: 1; }
+}

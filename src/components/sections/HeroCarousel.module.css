@@ -1,6 +1,12 @@
-/* Faixa de banners. A proporção é fixa para que a home não "pule" quando as
-   imagens terminam de carregar, e é mais alta no celular porque banner
-   largo demais vira uma tira ilegível na vertical. */
+/* Faixa de banners.
+
+   A proporção é fixa para a home não "pular" quando as imagens terminam de
+   carregar. No desktop ela é 8:3 — exatamente a proporção em que o lojista
+   monta a arte (1600 × 600), então ali a imagem aparece inteira.
+
+   No celular a tela é mais estreita e a faixa vira 2:1: o navegador corta as
+   laterais. Por isso a orientação no painel é manter o que importa no miolo
+   da arte — cerca de 75% do centro sobrevive no telefone. */
 
 .wrap { padding: 16px 0 6px; }
 
@@ -22,7 +28,7 @@
 .slide {
   flex: 0 0 100%;
   display: block;
-  aspect-ratio: 1280 / 380;
+  aspect-ratio: 8 / 3;
   background: var(--color-cream);
 }
 .img { width: 100%; height: 100%; object-fit: cover; user-select: none; }
@@ -98,13 +104,13 @@
 
 @media (max-width: 900px) {
   .wrap { padding: 12px 0 4px; }
-  .slide { aspect-ratio: 16 / 10; }
+  .slide { aspect-ratio: 5 / 2; }
   .capa { padding: 32px 22px; min-height: 260px; }
   .pontos { bottom: 9px; }
 }
 
 @media (max-width: 480px) {
-  .slide { aspect-ratio: 3 / 2; }
+  .slide { aspect-ratio: 2 / 1; }
   .palco { border-radius: var(--radius-md); }
   .capa { border-radius: var(--radius-md); }
   .capaBtn { width: 100%; }

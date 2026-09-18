@@ -77,6 +77,36 @@ function isBannerHolder(name) {
   return (name || '').trim() === '__BANNERS__';
 }
 
+// Mesma ideia para as artes das categorias: um produto oculto __CATEGORIAS__
+// guarda as imagens, e a descrição dele diz qual imagem é de qual categoria.
+const NOME_CATEGORIAS = '__CATEGORIAS__';
+
+function isCategoryHolder(name) {
+  return (name || '').trim() === NOME_CATEGORIAS;
+}
+
+/** Devolve { slug: urlDaImagem } a partir do produto portador. */
+function imagensDeCategoria(portador) {
+  if (!portador) return {};
+  let meta = {};
+  try {
+    const bruto = txt(portador.description, '').trim();
+    if (bruto.startsWith('{')) meta = JSON.parse(bruto) || {};
+  } catch {
+    return {};
+  }
+  const porId = {};
+  (portador.images || []).forEach((img) => {
+    if (img.src) porId[String(img.id)] = img.src;
+  });
+  const saida = {};
+  Object.entries(meta).forEach(([idImagem, dados]) => {
+    const slug = typeof dados === 'string' ? dados : dados?.slug;
+    if (slug && porId[idImagem]) saida[slug] = porId[idImagem];
+  });
+  return saida;
+}
+
 async function fetchStore(storeId) {
   try {
     const res = await fetch(`${baseUrl(storeId)}/store`, { headers: headers() });
@@ -228,6 +258,7 @@ export default async function handler(req, res) {
         // loja tirou da vitrine (por foto errada, por exemplo) reaparecem aqui.
         if (p.published === false) return false;
         if (isBannerHolder(txt(p.name))) return false;
+        if (isCategoryHolder(txt(p.name))) return false;
         return !isTestEntry(txt(p.name));
       })
       // A product without a category still belongs in /loja — only priceless
@@ -243,11 +274,19 @@ export default async function handler(req, res) {
       if (!imageByCategory[p.category] && p.image) imageByCategory[p.category] = p.image;
     });
 
+    // A arte que o lojista subiu no painel ganha da foto de produto: ela foi
+    // escolhida para representar a categoria, a outra é só o primeiro item
+    // que apareceu com foto.
+    const arteDaCategoria = imagensDeCategoria(
+      rawProducts.find((p) => isCategoryHolder(txt(p.name)))
+    );
+
     const categoriesWithMeta = categories
       .map((c) => ({
         ...c,
         count: countByCategory[c.slug] || 0,
-        image: imageByCategory[c.slug] || null,
+        image: arteDaCategoria[c.slug] || imageByCategory[c.slug] || null,
+        imagemPropria: Boolean(arteDaCategoria[c.slug]),
       }))
       .filter((c) => c.count > 0)
       .sort((a, b) => b.count - a.count);
