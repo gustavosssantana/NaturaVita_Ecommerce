@@ -5,14 +5,19 @@ import styles from './CategoryGrid.module.css';
 
 /**
  * Atalhos de categoria logo abaixo do banner — é por onde a maioria entra.
- * A foto é a de um produto real da categoria, então nada aqui é ilustração
- * genérica.
+ *
+ * São círculos numa fileira que desliza, e não uma grade: com 12 categorias
+ * a grade tomava meia tela do telefone antes de o visitante chegar em
+ * qualquer produto. Assim aparecem as três maiores, e o resto vem com o
+ * dedo. A ordem é a do catálogo, da categoria com mais produtos para a
+ * com menos.
+ *
+ * A foto é a arte que o lojista subiu no painel; sem arte, é a de um
+ * produto real da categoria. Nada aqui é ilustração genérica.
  */
 export default function CategoryGrid() {
   const { categories } = useCatalog();
   if (!categories.length) return null;
-
-  const lista = categories.slice(0, 12);
 
   return (
     <section className={`section ${styles.sec}`}>
@@ -26,8 +31,8 @@ export default function CategoryGrid() {
           </Link>
         </div>
 
-        <div className={styles.grade}>
-          {lista.map((c) => (
+        <div className={`rail ${styles.trilho}`}>
+          {categories.map((c) => (
             <Link key={c.id} href={`/${c.slug}`} className={styles.item}>
               <span className={styles.foto}>
                 {c.image ? (

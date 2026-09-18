@@ -812,3 +812,19 @@
 @media (max-width: 900px) {
   .main { padding-bottom: 78px; }
 }
+
+/* Os relacionados também sangravam até a borda da tela, pelo mesmo caminho
+   dos trilhos da home: margem negativa + scroll-snap. O snap encostava o
+   primeiro cartão em x=0 e o padding não voltava. Aqui a margem negativa
+   sai, e o cartão passa a ocupar metade da linha — dois inteiros por tela,
+   com o coração de favoritar de cada um visível. */
+@media (max-width: 768px) {
+  .relatedGrid {
+    margin-inline: 0;
+    padding-inline: 0;
+    grid-auto-columns: calc(50% - 20px);
+  }
+}
+@media (max-width: 480px) {
+  .relatedGrid { grid-auto-columns: calc(50% - 20px); gap: 12px; }
+}

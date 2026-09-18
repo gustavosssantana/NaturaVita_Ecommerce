@@ -188,8 +188,9 @@ ul, ol { list-style: none; }
 }
 
 /* ── Trilho horizontal ──
-   No celular as listas viram trilhos deslizantes que sangram até a borda
-   da tela — pilha vertical de 24 produtos vira rolagem infinita. */
+   No celular as listas viram trilhos que deslizam para o lado: pilha
+   vertical de 24 produtos vira rolagem infinita. O trilho começa e termina
+   na mesma margem do resto da página. */
 .rail {
   display: flex;
   gap: 12px;
@@ -203,8 +204,16 @@ ul, ol { list-style: none; }
 .rail > * { scroll-snap-align: start; flex: 0 0 auto; }
 
 .rail-bleed {
-  margin-inline: calc(var(--container-pad) * -1);
-  padding-inline: var(--container-pad);
+  /* O sangramento até a borda da tela foi removido.
+
+     Dois motivos. O visível: no telefone o primeiro cartão ficava colado na
+     borda esquerda. O escondido: com `scroll-snap`, o navegador encosta o
+     primeiro item no início da área de rolagem já no carregamento, e isso
+     comia o padding que devolveria a margem — o cartão nascia em x=0 por
+     mais padding que se pusesse aqui.
+
+     Agora o trilho respeita a mesma margem do resto da página. */
+  scroll-padding-inline: 0;
 }
 
 /* Marcador de carregamento */
@@ -230,10 +239,11 @@ ul, ol { list-style: none; }
 
 /* ── Telas menores ── */
 @media (max-width: 900px) {
-  :root { --container-pad: 18px; --section-gap: 36px; }
+  :root { --container-pad: 20px; --section-gap: 36px; }
 }
 @media (max-width: 480px) {
-  :root { --container-pad: 14px; --section-gap: 30px; --btn-h: 48px; }
+  /* 18px, não 14: com 14 o conteúdo encostava na borda do telefone. */
+  :root { --container-pad: 18px; --section-gap: 30px; --btn-h: 48px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

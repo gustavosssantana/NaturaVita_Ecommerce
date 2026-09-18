@@ -132,25 +132,22 @@ export default function HeroCarousel() {
   );
 }
 
-/** Capa usada enquanto não há banner cadastrado. */
-function CapaPadrao({ products, categories }) {
-  const total = products.length;
-  const arredondado = total >= 100 ? `${Math.floor(total / 100) * 100}+` : total || '—';
-
+/**
+ * Capa usada enquanto não há banner cadastrado.
+ *
+ * Enxuta de propósito: uma linha e um botão. A versão anterior tinha selo,
+ * título em duas partes e um parágrafo de apoio — texto demais para o que é,
+ * no fim das contas, um espaço reservado até o lojista subir a arte dele.
+ */
+function CapaPadrao() {
   return (
     <section className={styles.wrap} aria-label="Boas-vindas">
       <div className="container">
         <div className={styles.capa}>
           <div className={styles.capaTexto}>
-            <span className={styles.capaSelo}>Suplementos e naturais</span>
             <h1 className={styles.capaTitulo}>
-              Nutrição de verdade,{' '}
-              <em>sem concessões.</em>
+              Nutrição de verdade, <em>sem concessões.</em>
             </h1>
-            <p className={styles.capaSub}>
-              {arredondado} produtos selecionados em {categories.length || '—'} categorias, com
-              entrega para todo o Brasil.
-            </p>
             <Link href="/loja" className={`btn btn-accent ${styles.capaBtn}`}>
               Ver todos os produtos <ArrowRight size={16} />
             </Link>

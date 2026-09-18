@@ -4,7 +4,7 @@ Dois tipos de imagem, com tamanhos diferentes:
 
 | O quê | Tamanho | Onde aparece |
 |---|---|---|
-| **Arte de categoria** | **800 × 800** (quadrada) | Os quadradinhos de "Comprar por categoria" na home |
+| **Arte de categoria** | **800 × 800** (quadrada) | Os círculos de "Comprar por categoria" na home |
 | **Banner de promoção** | **1600 × 600** (deitada) | A faixa que gira no topo da home |
 
 No banner, o computador mostra a imagem inteira. **O celular corta as laterais** — sobra cerca de 75% do centro. Então tudo que importa (produto, texto, preço) fica no miolo.
@@ -39,6 +39,8 @@ embalagens genéricas e sem identificação.
 ---
 
 # 1. Artes das categorias — 800 × 800
+
+A home mostra essas artes **dentro de um círculo**. A imagem é quadrada, e os quatro cantos dela são cortados — então o produto tem que estar no meio, com folga em volta. Os prompts abaixo já pedem composição centrada com muito espaço vazio, que é exatamente o que salva o recorte redondo.
 
 São as suas 12 categorias reais. Cole o bloco de estilo e depois um destes:
 

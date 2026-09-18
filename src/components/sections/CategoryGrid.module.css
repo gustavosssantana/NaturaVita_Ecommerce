@@ -1,49 +1,39 @@
 .sec { padding-block: calc(var(--section-gap) * .62); }
 
-/* auto-fit com mínimo fixo: no celular cabem três por linha, no desktop
-   seis ou mais, e as colunas se esticam para preencher — sem precisar de uma
-   consulta de mídia para cada faixa de largura. */
-.grade {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
-  gap: 10px;
+.trilho { gap: 14px; align-items: flex-start; }
+
+/* Cada atalho ocupa pouco mais de um terço da linha no telefone: três
+   aparecem, o quarto espia e avisa que a fileira continua. No desktop
+   trava em 112px e cabem todas. */
+.item {
+  width: min(112px, calc(33.333% - 14px));
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; text-align: center;
 }
 
-.item {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 8px; padding: 8px 8px 12px;
+/* Círculo. A arte da categoria é quadrada (800 × 800) e o círculo corta os
+   cantos dela — por isso a orientação no painel é fundo liso e uniforme,
+   com o assunto no meio. */
+.foto {
+  width: 100%; aspect-ratio: 1 / 1;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-full);
   background: var(--color-surface);
   border: 1px solid var(--color-border-soft);
-  border-radius: var(--radius-md);
-  text-align: center;
+  overflow: hidden;
   transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
 }
-.item:hover {
+.item:hover .foto {
   border-color: var(--color-green-sage);
   box-shadow: var(--shadow-sm);
   transform: translateY(-2px);
 }
-
-/* Quadrado grande, não mais a bolinha: quando a categoria tem arte própria
-   (800 × 800, feita para isso), ela merece espaço. A foto de produto que
-   serve de reserva continua cabendo inteira por causa do `contain`. */
-.foto {
-  width: 100%; aspect-ratio: 1 / 1;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: var(--radius-sm);
-  background: var(--color-cream);
-  overflow: hidden;
-}
-.foto img { width: 100%; height: 100%; object-fit: contain; }
+.foto img { width: 100%; height: 100%; object-fit: contain; padding: 9px; }
 .semFoto { width: 100%; height: 100%; background: var(--color-green-wash); }
 
 .nome {
-  font-size: .78rem; font-weight: var(--fw-semibold); line-height: 1.25;
+  font-size: .76rem; font-weight: var(--fw-semibold); line-height: 1.25;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.qtd { font-size: .68rem; color: var(--color-text-muted); }
-
-@media (max-width: 480px) {
-  .grade { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
-}
+.qtd { font-size: .67rem; color: var(--color-text-muted); }

@@ -843,8 +843,9 @@ function PainelCategorias({ chamar }) {
       <p className={styles.destaque}>
         <LayoutGrid size={15} />
         <span>
-          Imagens <strong>quadradas, 800 × 800</strong>, fundo claro e uniforme. Sem arte, a
-          categoria usa a foto de um produto qualquer dela.
+          Imagens <strong>quadradas, 800 × 800</strong>, fundo claro e uniforme. A home
+          mostra dentro de um <strong>círculo</strong>, então deixe o produto no meio — os
+          cantos são cortados. Sem arte, a categoria usa a foto de um produto qualquer dela.
         </span>
       </p>
 

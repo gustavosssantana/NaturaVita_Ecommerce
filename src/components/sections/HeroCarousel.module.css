@@ -67,11 +67,14 @@
   border-radius: var(--radius-lg);
   background: linear-gradient(135deg, var(--color-green-deep), var(--color-green-mid) 62%, var(--color-green-accent));
   color: #fff;
-  padding: 44px 40px;
-  min-height: 320px;
+  padding: 40px;
+  min-height: 280px;
   display: flex; align-items: center;
 }
-.capaTexto { position: relative; z-index: 2; max-width: 620px; }
+.capaTexto {
+  position: relative; z-index: 2; max-width: 620px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 22px;
+}
 .capaSelo {
   display: inline-block; margin-bottom: 14px;
   padding: 5px 13px; border-radius: var(--radius-full);
@@ -105,7 +108,7 @@
 @media (max-width: 900px) {
   .wrap { padding: 12px 0 4px; }
   .slide { aspect-ratio: 5 / 2; }
-  .capa { padding: 32px 22px; min-height: 260px; }
+  .capa { padding: 28px 22px; min-height: 0; }
   .pontos { bottom: 9px; }
 }
 

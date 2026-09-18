@@ -2,17 +2,19 @@
 
 .trilho { gap: 12px; }
 
-/* Largura fixa por cartão: é o que faz o próximo espiar na borda da tela e
-   avisar que a fileira continua. */
-.item { width: 210px; display: flex; }
+/* Largura do cartão.
+
+   O `min` resolve os dois mundos: no desktop trava em 210px, no telefone
+   vira metade da linha menos uma folga. O que importa é que DOIS cartões
+   caibam inteiros na tela — antes o segundo ficava cortado na direita e,
+   com ele, o coração de favoritar, que mora no canto superior direito.
+   O que sobra de folga é a espiada do terceiro, que avisa que a fileira
+   continua para o lado. */
+.item { width: min(210px, calc(50% - 20px)); display: flex; }
 .item > * { width: 100%; }
 
-.fantasma { width: 210px; height: 330px; flex: 0 0 auto; }
+.fantasma { width: min(210px, calc(50% - 20px)); height: 330px; flex: 0 0 auto; }
 
 @media (max-width: 900px) {
-  .item, .fantasma { width: 172px; }
-  .fantasma { height: 292px; }
-}
-@media (max-width: 380px) {
-  .item, .fantasma { width: 156px; }
+  .fantasma { height: 300px; }
 }
